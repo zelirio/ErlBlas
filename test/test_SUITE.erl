@@ -1,11 +1,17 @@
 -module(test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
--export([numerl_test/0]).
+-export([eye_test/0]).
 
 numerl_test() ->
     M1 = numerl:matrix([[4,2],[2,2]]),
     M2 = numerl:matrix([[3,5],[5,4]]),
     erlang:display(numerl:mtfli(numerl:dot(M1,M2))).
+
+eye_test()->
+    N = rand:uniform(25),
+    erlang:display(N),
+    Mat = block_mat:eye(N),
+    block_mat:display_mat(Mat).
 
 add_test() ->
     N = 2,
@@ -65,17 +71,11 @@ matrix_test() ->
 
 zeros_test() ->
     %N = 5,
-    erlang:display(io:format("A: ~w~n",[42])),
-    N = rand:uniform(50),
-    M = rand:uniform(50),
-    erlang:display(io_lib:format("sdfsdf ~B", [12312])),
+    N = rand:uniform(20),
+    M = rand:uniform(20),
+    erlang:display(io_lib:format("~w~w", [N,M])),
     A = block_mat:zeros(N,M),
-    %erlang:display(A),
-    %B = mat:zeros(3,3),
-    io:format("A: ~w~n",[A]),
-    printDim(A).
-    %io:format("B: ~w~n",[B]),
-    %io:format("test passed ? : ~w~n", [mat:'=='(A,B)]).
+    block_mat:display_mat(A).
 
 printDim(A) ->
     case A of 

@@ -16,3 +16,6 @@
         j'ai du changer le n° de commit manuellement dans le rebar.lock pour une raison obscure...
     mult fonctionne, "plus qu'à" faire les tests...; j'ai gardé l'ancienne fonction mult dans un fichier "backup"
     j'ai ajouté une fonction "display mat". pas très ergonomique mais ça évite les badargs...
+    numerl : mtfl et mtfli modifiés pour renvoyer les matrice comme des listes de listes de nombres, et pas une longue liste de nombres, et push sur le fork de numerl
+        j'ai repush pour corriger un horrible truc bizarre de C avec les pointeurs
+    refactor un petit peu zeros

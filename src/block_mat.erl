@@ -1,16 +1,31 @@
 -module(block_mat).
 
--export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, display_mat/1]).
+-export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1]).
 
 -define(MAX_LENGTH, 5).
 
 -type matrix() :: [[number(), ...], ...].
 
-%eye(N) ->
-%    RestN = N rem ?MAX_LENGTH,
-%   DivN = N div (?MAX_LENGTH + 1),
-
-%   ok.
+eye(N) ->
+    RestN = N rem ?MAX_LENGTH,
+    DivN = N div ?MAX_LENGTH,
+    if N =< ?MAX_LENGTH ->
+        [[numerl:eye(N)]];
+    true ->
+        if RestN == 0 ->
+            Mat1 = eye(?MAX_LENGTH),
+            Mat2 = zeros(?MAX_LENGTH, (DivN-1)*?MAX_LENGTH),
+            Mat3 = zeros((DivN-1)*?MAX_LENGTH,?MAX_LENGTH),
+            Mat4 = eye((DivN-1)*?MAX_LENGTH),
+            recompose4(Mat1, Mat2, Mat3, Mat4);
+        true ->
+            Mat1 = eye(RestN),
+            Mat2 = zeros(RestN, DivN*?MAX_LENGTH),
+            Mat3 = zeros(DivN*?MAX_LENGTH,RestN),
+            Mat4 = eye(DivN*?MAX_LENGTH),
+            recompose4(Mat1, Mat2, Mat3, Mat4)
+        end
+    end.
 
 display_mat(M) ->
     lists:map(fun(Row) -> lists:map(fun(Elem)-> erlang:display(numerl:mtfli(Elem)) end, Row) end,M).
@@ -110,74 +125,72 @@ matrix(Mat, N, M) when N > ?MAX_LENGTH, M > ?MAX_LENGTH ->
 
 zeros(N,M) ->
     RestN = N rem ?MAX_LENGTH,
-    DivN = N div (?MAX_LENGTH + 1),
-    Div2N = N div (?MAX_LENGTH),
+    DivN = N div (?MAX_LENGTH),
 
     RestM = M rem ?MAX_LENGTH,
-    DivM = M div (?MAX_LENGTH + 1),
-    Div2M = M div (?MAX_LENGTH),
+    DivM = M div (?MAX_LENGTH),
     
-    if DivN == 0 ->
-        % CORRECT
-        if DivM == 0 ->
+    if N =< ?MAX_LENGTH ->
+        if M =< ?MAX_LENGTH ->
+            %(3x3)
             [[numerl:zeros(N,M)]];
         true ->
             if RestM == 0 ->
                 %(3x25) 
                 A = zeros(N,?MAX_LENGTH), 
-                B = zeros(N,(Div2M-1)*?MAX_LENGTH), 
+                B = zeros(N,(DivM-1)*?MAX_LENGTH), 
                 appendEach(A,B);
             true ->
                 %(3x26)
                 A = zeros(N,RestM),
-                B = zeros(N,(Div2M)*?MAX_LENGTH),
+                B = zeros(N,(DivM)*?MAX_LENGTH),
                 appendEach(A,B)
             end
         end;
     true ->
-        if DivM == 0 ->
+        if M =< ?MAX_LENGTH ->
             if RestN == 0 ->
-                %(25, 3)
+                %(25x3)
                 A = zeros(?MAX_LENGTH, M), 
-                B = zeros((Div2N-1)*?MAX_LENGTH,M),
+                B = zeros((DivN-1)*?MAX_LENGTH,M),
                 lists:append(A,B);
             true ->
-                %(26, 3)
+                %(26x3)
                 A = zeros(RestN, M), 
-                B = zeros((Div2N)*?MAX_LENGTH,M),
+                B = zeros((DivN)*?MAX_LENGTH,M),
                 lists:append(A,B)
             end;
         true ->
             if RestM == 0 ->
                 if RestN == 0 ->
-                    %(25, 25)
+                    %(25x25)
                     Mat1 = zeros(?MAX_LENGTH,?MAX_LENGTH),
-                    Mat2 = zeros(?MAX_LENGTH,(Div2M-1)*?MAX_LENGTH),
-                    Mat3 = zeros((Div2N-1)*?MAX_LENGTH,?MAX_LENGTH),
-                    Mat4 = zeros((Div2N-1)*?MAX_LENGTH,(Div2M-1)*?MAX_LENGTH),
+                    Mat2 = zeros(?MAX_LENGTH,(DivM-1)*?MAX_LENGTH),
+                    Mat3 = zeros((DivN-1)*?MAX_LENGTH,?MAX_LENGTH),
+                    Mat4 = zeros((DivN-1)*?MAX_LENGTH,(DivM-1)*?MAX_LENGTH),
                     recompose4(Mat1, Mat2, Mat3, Mat4);
                 true ->
-                    %(26, 25)
+                    %(26x25)
                     Mat1 = zeros(RestN,?MAX_LENGTH),
-                    Mat2 = zeros(RestN,(Div2M-1)*?MAX_LENGTH),
-                    Mat3 = zeros((Div2N)*?MAX_LENGTH,?MAX_LENGTH),
-                    Mat4 = zeros((Div2N)*?MAX_LENGTH,(Div2M-1)*?MAX_LENGTH),
+                    Mat2 = zeros(RestN,(DivM-1)*?MAX_LENGTH),
+                    Mat3 = zeros((DivN)*?MAX_LENGTH,?MAX_LENGTH),
+                    Mat4 = zeros((DivN)*?MAX_LENGTH,(DivM-1)*?MAX_LENGTH),
                     recompose4(Mat1, Mat2, Mat3, Mat4)
                 end;
             true ->
                 if RestN == 0 ->
-                    %(25, 26)
+                    %(25x26)
                     Mat1 = zeros(?MAX_LENGTH,RestM),
-                    Mat2 = zeros(?MAX_LENGTH, (Div2M)*?MAX_LENGTH),
-                    Mat3 = zeros((Div2N-1)*?MAX_LENGTH,RestM),
-                    Mat4 = zeros((Div2N-1)*?MAX_LENGTH,(Div2M)*?MAX_LENGTH),
+                    Mat2 = zeros(?MAX_LENGTH, (DivM)*?MAX_LENGTH),
+                    Mat3 = zeros((DivN-1)*?MAX_LENGTH,RestM),
+                    Mat4 = zeros((DivN-1)*?MAX_LENGTH,(DivM)*?MAX_LENGTH),
                     recompose4(Mat1, Mat2, Mat3, Mat4);
                 true ->
-                    %(26, 26)
+                    %(26x26)
                     Mat1 = zeros(RestN,RestM),
-                    Mat2 = zeros(RestN,(Div2M)*?MAX_LENGTH),
-                    Mat3 = zeros((Div2N)*?MAX_LENGTH,RestM),
-                    Mat4 = zeros((Div2N)*?MAX_LENGTH,(Div2M)*?MAX_LENGTH),
+                    Mat2 = zeros(RestN,(DivM)*?MAX_LENGTH),
+                    Mat3 = zeros((DivN)*?MAX_LENGTH,RestM),
+                    Mat4 = zeros((DivN)*?MAX_LENGTH,(DivM)*?MAX_LENGTH),
                     recompose4(Mat1, Mat2, Mat3, Mat4)
                 end
             end
