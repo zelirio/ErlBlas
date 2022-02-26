@@ -1,4 +1,4 @@
 [{<<"numerl">>,
-  {git,"https://github.com/tanguyl/numerl.git",
-       {ref,"ddeac7a2ea6315bdfb1168067123b82d2a125cb3"}},
+  {git,"https://github.com/CoupletB/numerl.git",
+       {ref,"c670e4abc297017ce19961ec278c5f7a24c9dcc5"}},
   0}].

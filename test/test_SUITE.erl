@@ -1,5 +1,11 @@
 -module(test_SUITE).
--export([add_test/0]).
+-include_lib("stdlib/include/assert.hrl").
+-export([numerl_test/0]).
+
+numerl_test() ->
+    M1 = numerl:matrix([[4,2],[2,2]]),
+    M2 = numerl:matrix([[3,5],[5,4]]),
+    erlang:display(numerl:mtfli(numerl:dot(M1,M2))).
 
 add_test() ->
     N = 2,
@@ -25,14 +31,19 @@ add_test() ->
     %printDim(C).
 
 
-testMult() ->
-    M = rand:uniform(1000),
-    N = rand:uniform(1000),
-    P = rand:uniform(1000),
+mult_test() ->
+    M = rand:uniform(10),
+    N = rand:uniform(10),
+    P = rand:uniform(10),
     io:format("M : ~w, N : ~w, P : ~w~n",[M,N,P]),
     A = generateRandMat(M,N),
     B = generateRandMat(N,P),
-    io:format("test passed ? : ~w~n", [numerl:'*'(A,B)==block_mat:mult(A,B)]).
+    NumA = block_mat:matrix(A),
+    NumB = block_mat:matrix(B),
+    block_mat:display_mat(NumA),
+    block_mat:display_mat(NumB),
+    block_mat:display_mat(block_mat:mult(NumA,NumB)).
+    %io:format("test passed ? : ~w~n", [numerl:dot(C,D)==block_mat:mult2(NumA,NumB)]).
 
 testInv() ->
     N = rand:uniform(50),

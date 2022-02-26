@@ -1,0 +1,18 @@
+23/03 - B. : 
+    dot nif : 
+        Résultat non déterministe. Avec les deux mêmes matrices, donne parfois le bon résultat, parfois pas : le dernier nombre est mauvais (overflow ?).
+        J'essaie de debug le code c en utilisant les fonction de debug présentes.
+        Je pense avoir trouvé : l'argument "beta" donné à dgemm était hardcodé à 1.0, probablement une typo. 
+        Cela avait pour conséquence d'ajouter au produit la matrice C, initialisée par un malloc, donc garbage. 
+        J'ai remplacé l'argument par la variable "beta", déjà initialisée à 0.0, et je n'ai visiblement plus de bug pour la multiplication.
+    Segfault lorsque je lance le test "div_test" de numerl via rebar3.
+25/03 - B. :
+    inv_nif_test : donne un segfault.
+        après deux heures d'investigation, il semble que ce soit un bug d'Openblas sur certaines versions d'Ubuntu lorsqu'on utilise une VM Java ou Erlang : 
+        la fonction dgetfr produit un segfault si la dimension de la matrice est supérieur ou égale à 18.
+    je continue la modification de la fonction mult.
+26/03 - B :
+    j'ai update le rebar.config pour prendre le code de notre fork de numerl, le temps qu'on push la correction sur le git de Tanguy,
+        j'ai du changer le n° de commit manuellement dans le rebar.lock pour une raison obscure...
+    mult fonctionne, "plus qu'à" faire les tests...; j'ai gardé l'ancienne fonction mult dans un fichier "backup"
+    j'ai ajouté une fonction "display mat". pas très ergonomique mais ça évite les badargs...

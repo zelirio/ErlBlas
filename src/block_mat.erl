@@ -1,6 +1,6 @@
 -module(block_mat).
 
--export([add/2, sub/2, mult2/2, inv/1, zeros/2, matrix/1]).
+-export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, display_mat/1]).
 
 -define(MAX_LENGTH, 5).
 
@@ -12,11 +12,14 @@
 
 %   ok.
 
+display_mat(M) ->
+    lists:map(fun(Row) -> lists:map(fun(Elem)-> erlang:display(numerl:mtfli(Elem)) end, Row) end,M).
+
+
 element_wise_op(Op, M1, M2) ->
     lists:zipwith(fun(L1, L2) -> lists:zipwith(Op, L1, L2) end, M1, M2).
 
 matrix(Mat) ->
-    erlang:display(Mat),
     N = length(Mat),
     M = length(lists:nth(1,Mat)),
     matrix(Mat, N, M).
@@ -195,8 +198,8 @@ add(M1, M2) ->
 sub(M1, M2) ->
     element_wise_op(fun numerl:sub/2, M1, M2).
 
-mult2(M1, M2) ->
-    mult2T(M1, tr(M2)).
+mult(M1, M2) ->
+    multT(M1, tr(M2)).
 
 tr(M) ->
     tr(M, []).
@@ -215,10 +218,8 @@ tr([], Col, Cols) ->
 tr([[H|T]|Rows], Col, Cols) ->
     tr(Rows, [H|Col], [T|Cols]).
 
-mult2T(M1, M2) ->
-    %erlang:display(M1),
-    %erlang:display(M2),
-    [[lineSum(lists:zipwith(fun(Li, Cj) -> erlang:display(numerl:mtfli(Li)), erlang:display(numerl:mtfli(Cj)), numerl:dot(Li, Cj) end, Li, Cj))
+multT(M1, M2) ->
+    [[lineSum(lists:zipwith(fun(_, _) -> [A]=Li, [B] = Cj, numerl:dot(A, B) end, Li, Cj))
         || Cj <- M2]
         || Li <- M1].
 
@@ -231,101 +232,6 @@ lineSum(List, Acc) ->
     [] ->
         Acc
     end.
-
-mult(M1,M2)->
-    Dim1 = [length(M1)|length(lists:nth(1,M1))],
-    Dim2 = [length(M2)|length(lists:nth(1,M2))],
-    mult(M1,M2,Dim1,Dim2).
-
-mult(M1,M2,[M|N],[N|P]) when N > ?MAX_LENGTH, M> ?MAX_LENGTH, P> ?MAX_LENGTH -> %done
-    CN = trunc(N/2),
-    CM = trunc(M/2),
-    CP = P-CM,
-    if CP<1 ->
-        CN = trunc(N/2),
-        CM = trunc(M/2),
-        {A13, A24} = splitLine(M1,[],[],CN),
-        {A1,A3} = lists:split(CM,A13),
-        {A2,A4} = lists:split(CM,A24),
-        {B1,B2} = lists:split(CN,M2),
-        C1 = add(mult(A1,B1),mult(A2,B2)),
-        C2 = add(mult(A3,B1),mult(A4,B2)),
-        lists:append(C1,C2);
-    true ->
-        {A13, A24} = splitLine(M1,[],[],CN),
-        {A1,A3} = lists:split(CM,A13),
-        {A2,A4} = lists:split(CM,A24),
-        {B13, B24} = splitLine(M2,[],[],CP),
-        {B1,B3} = lists:split(CN,B13),
-        {B2,B4} = lists:split(CN,B24),
-        C1 = add(mult(A1,B1),mult(A2,B3)),
-        C2 = add(mult(A1,B2),mult(A2,B4)),
-        C3 = add(mult(A3,B1),mult(A4,B3)),
-        C4 = add(mult(A3,B2),mult(A4,B4)),
-        recompose4(C1,C2,C3,C4)
-    end;
-    
-mult(M1,M2,[_|N],[N|P]) when N > ?MAX_LENGTH, P> ?MAX_LENGTH -> %done
-    CN = trunc(N/2),
-    CP = trunc(P/2),
-    {A1,A2} = splitLine(M1,[],[], CN),
-    {B1,B2} = lists:split(CN,M2),
-    {B11,B12} = splitLine(B1,[],[], CP),
-    {B21,B22} = splitLine(B2,[],[], CP),
-    C1 = add(mult(A1,B11),mult(A2,B21)),
-    C2 = add(mult(A1,B12), mult(A2,B22)),
-    appendEach(C1,C2);
-
-mult(M1,M2,[M|N],[N|_]) when N > ?MAX_LENGTH, M> ?MAX_LENGTH-> %done
-    CN = trunc(N/2),
-    CM = trunc(M/2),
-    {A13, A24} = splitLine(M1,[],[],CN),
-    {A1,A3} = lists:split(CM,A13),
-    {A2,A4} = lists:split(CM,A24),
-    {B1,B2} = lists:split(CN,M2),
-    C1 = add(mult(A1,B1),mult(A2,B2)),
-    C2 = add(mult(A3,B1),mult(A4,B2)),
-    lists:append(C1,C2);
-
-mult(M1,M2,[_|N],[N|_]) when N > ?MAX_LENGTH -> % done
-    CN = trunc(N/2),
-    {A1,A2} = splitLine(M1,[],[],CN),
-    {B1,B2} = lists:split(CN, M2),
-    C1 = mult(A1,B1),
-    C2 = mult(A2,B2),
-    add(C1,C2);
-
-mult(M1,M2,[M|N],[N|P]) when M> ?MAX_LENGTH, P> ?MAX_LENGTH -> % done
-    CM = trunc(M/2),
-    CP = P-CM,
-    if CP<1 ->
-        Co1 = trunc(M/2),
-        {A1,A2} = lists:split(Co1, M1),
-        C1 = mult(A1,M2),
-        C2 = mult(A2,M2),
-        lists:append(C1,C2);
-    true ->
-        {A1,A2} = lists:split(CM,M1),
-        {B1,B2} = splitLine(M2,[],[],CP),
-        recompose4(mult(A1,B1),mult(A1,B2),mult(A2,B1),mult(A2,B2))
-    end;
-
-mult(M1,M2,[_|N],[N|P]) when P> ?MAX_LENGTH -> % done
-    CP = trunc(P/2),
-    {B1,B2} = splitLine(M2,[],[],CP),
-    C1 = mult(M1,B1),
-    C2 = mult(M1,B2),
-    appendEach(C1,C2);
-
-mult(M1,M2,[M|N],[N|_]) when M> ?MAX_LENGTH-> % done
-    Co1 = trunc(M/2),
-    {A1,A2} = lists:split(Co1, M1),
-    C1 = mult(A1,M2),
-    C2 = mult(A2,M2),
-    lists:append(C1,C2);
-
-mult(M1,M2,[_|N],[N|_]) -> %done
-    mat:'*'(M1,M2).
 
 inv(M1) ->
     Len = length(M1),
@@ -384,6 +290,3 @@ appendEach(M1,M2)->
         {[H1|T1],[H2|T2]} ->
             [lists:append(H1,H2)|appendEach(T1,T2)]
     end.
-
-        
-    
