@@ -1,6 +1,6 @@
 -module(block_mat).
 
--export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1]).
+-export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1]).
 
 -define(MAX_LENGTH, 5).
 
@@ -303,3 +303,18 @@ appendEach(M1,M2)->
         {[H1|T1],[H2|T2]} ->
             [lists:append(H1,H2)|appendEach(T1,T2)]
     end.
+
+appendEachList(L) ->
+    case L of
+        [H|[]] -> H;
+        [H|T] -> appendEach(H,appendEachList(T))
+    end.
+
+appendList(L) ->
+    case L of
+        [H|[]] ->H;
+        [H|T] -> lists:append(H, appendList(T))
+    end.
+
+toErl(M) ->
+    appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfli(Elem) end, Row)) end,M)).

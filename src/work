@@ -19,3 +19,9 @@
     numerl : mtfl et mtfli modifiés pour renvoyer les matrice comme des listes de listes de nombres, et pas une longue liste de nombres, et push sur le fork de numerl
         j'ai repush pour corriger un horrible truc bizarre de C avec les pointeurs
     refactor un petit peu zeros
+
+27/03 - L :
+    j'ai rajouter une fonction toErl pour récuperer la representation matricielle d'une matrice block.
+    2 petites sous fonctions ont été rajouter pour.
+    Ce sera tres utile pour écrire des tests de validation.
+    j'ai ecrit quelques tests pour la fonction matrix mais pas encore complet.
