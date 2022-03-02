@@ -1,6 +1,15 @@
 -module(test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
--export([eye_test/0]).
+-export([max_length_test/0]).
+
+max_length_test() ->
+    M1 = generateRandMat(7,4),
+    erlang:display(M1),
+    M2 = block_mat:matrix(M1),
+    M1 = block_mat:toErl(M2),
+    erlang:display(block_mat:toErl(block_mat:zeros(7,4))),
+    erlang:display(block_mat:toErl(block_mat:eye(7))),
+    erlang:display(block_mat:toErl(block_mat:matrix(M1))).
 
 numerl_test() ->
     M1 = numerl:matrix([[4,2],[2,2]]),
