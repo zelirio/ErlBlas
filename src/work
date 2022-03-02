@@ -33,4 +33,11 @@
         j'ai modifié les fonctions de génération pour prendre en compte la modification, et enlevé les guards de la fonction matrix puisqu'on ne peut
             pas faire d'appel à get(max_length) à l'intérieur.
         pour le moment, la fonction "benchmark", lancéé au chargement du module block_mat, lie juste le term "max_length" à la valeur 5.
+    bon, gros gros problèmes pour le benchmark : tape 250*250 en moins d'1ms 50 fois d'affilée, puis prend plus d'1ms pour faire une 50*50...
+    okay, j'arrive à une solution satisfaisante malgré l'instabilité de ma VM : le benchmark est divisé en deux rounds : 
+        Durant le premier, il multiplie la taille de la matrice par deux jusqu'à prendre plus d'1ms, et renvoie la valeur max qui a pris moins d'1ms.
+        Durant le second, même chose mais mutliplie par 1.2 à chaque fois, et en commençant avec la valeur du premier round.
+        Le premier round est répété 5 fois, et la valeur passée en argument au deuxième round est le minimum de ces 5 itérations.
+        Le second round est répété 20 fois, et la valeur choisie comme valeur finale pour le paramètre max_length est la 2eme plus petite valeur,
+            pour éviter les (rares - 1/40 en moyenne pour ma tres instable VM) outliers à valeur basse.
         

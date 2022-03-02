@@ -4,7 +4,7 @@
 -import(persistent_term,[get/1,put/2]).
 -on_load(benchmark/0).
 
--export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1]).
+-export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1, first_try_benchmark/0, test_time/2]).
 
 -type matrix() :: [[number(), ...], ...].
 
@@ -326,7 +326,63 @@ appendList(L) ->
 toErl(M) ->
     appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfli(Elem) end, Row)) end,M)).
 
+generateRandMat(0,_) ->
+    [];
+generateRandMat(Dim1,Dim2) ->
+    [generateRandVect(Dim2)|generateRandMat(Dim1-1,Dim2)].
+        
+generateRandVect(0) ->
+    [];
+generateRandVect(Dim2) ->
+    [rand:uniform(5)|generateRandVect(Dim2-1)].
+
 benchmark() ->
     put(max_length,5).
 
-%first_try_benchmark() ->
+first_try_benchmark() ->
+    First_max = lists:min([round_one_benchmark(5) || _ <-lists:seq(1,5)]),
+    erlang:display({first_max, First_max}),
+    Second_max = lists:nth(2,lists:sort([round_two_benchmark(First_max) || _ <-lists:seq(1,20)])),
+    erlang:display({second_max, Second_max}),
+    put(max_length,Second_max).
+
+round_one_benchmark(N) ->
+    Passed = test_time(N,false),
+    if Passed ->
+        round_one_benchmark(N*2);
+    true ->
+        N div 2
+    end.
+
+round_two_benchmark(N) ->
+    Passed = test_time(N, false),
+    if Passed ->
+        round_two_benchmark(round(N*1.2));
+    true ->
+        round(N/1.2)
+    end.
+
+test_time(N,true) ->
+    timer:sleep(100),
+    M = generateRandMat(N,N),
+    Mat = numerl:matrix(M),
+    TimesValues = [timer:tc(numerl,dot,[Mat,Mat]) || _ <- lists:seq(1,50)],
+    Times = [Time || {Time, _} <- TimesValues],
+    Test = lists:search(fun(Time) -> Time>1000 end,Times),
+    case Test of {value, Time} ->
+        erlang:display({N,Time}),
+        false;
+    _ ->
+        true
+    end;
+
+    test_time(N,false) ->
+        M = generateRandMat(N,N),
+        Mat = numerl:matrix(M),
+        {Time,_} = timer:tc(numerl,dot,[Mat,Mat]),
+        if Time <1000 ->
+            true;
+        true ->
+            erlang:display({foire, N,Time}),
+            false
+        end.

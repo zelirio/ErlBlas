@@ -1,6 +1,17 @@
 -module(test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
--export([max_length_test/0]).
+-compile({no_auto_import,[get/1,put/2]}).
+-import(persistent_term,[get/1,put/2]).
+-export([benchmark_test/0]).
+
+
+benchmark_test() ->
+    block_mat:first_try_benchmark(),
+    erlang:display(get(max_length)).
+    %erlang:display(block_mat:test_time(get(max_length),true)),
+    %erlang:display(block_mat:test_time(get(max_length),true)),
+    %erlang:display(block_mat:test_time(get(max_length),true)),
+    %erlang:display(block_mat:test_time(get(max_length),true)).
 
 max_length_test() ->
     M1 = generateRandMat(7,4),
