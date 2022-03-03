@@ -2,10 +2,47 @@
 -include_lib("stdlib/include/assert.hrl").
 -compile({no_auto_import,[get/1,put/2]}).
 -import(persistent_term,[get/1,put/2]).
--export([benchmark_test/0]).
+-include_lib("eunit/include/eunit.hrl").
 
+dims_testi() ->
+    Mat = generateRandMat(12,16),
+    Mat2 = block_mat:matrix(Mat),
+    erlang:display(block_mat:dims(Mat2)).
 
-benchmark_test() ->
+%oui_test_() ->
+%    {timeout, 2, test_SUITE:conc_test()}.
+
+oui_test_() ->
+    {timeout, 10,
+        fun() ->
+                zeros_conc_testi()
+        end}.
+
+zeros_conc_testi() ->
+    N = 20000,
+    M = 20000,
+    erlang:display({dims,N,M}),
+    block_mat:zeros(N,M),
+    {NormalTime, Value} = timer:tc(block_mat,zeros,[N,M]),
+    erlang:display({normal,NormalTime}),
+    {ConcTime, Value} = timer:tc(block_mat,zeros_conc,[N,M]),
+    erlang:display({conc,ConcTime}),
+    erlang:display(block_mat:dims(Value)).
+
+conc_testi()->
+    N = rand:uniform(50),
+    M = rand:uniform(50),
+    erlang:display({dims,N,M}),
+    Mat = generateRandMat(1000,1000),
+    block_mat:matrix(Mat),
+    block_mat:matrix_conc(Mat),
+    {NormalTime, Value} = timer:tc(block_mat,matrix,[Mat]),
+    erlang:display({normal,NormalTime}),
+    {ConcTime, Value} = timer:tc(block_mat,matrix_conc,[Mat]),
+    erlang:display({conc,ConcTime}).
+    %erlang:display(erlang:system_info(logical_processors_available)).
+
+benchmark_testi() ->
     block_mat:first_try_benchmark(),
     erlang:display(get(max_length)).
     %erlang:display(block_mat:test_time(get(max_length),true)),
@@ -13,7 +50,7 @@ benchmark_test() ->
     %erlang:display(block_mat:test_time(get(max_length),true)),
     %erlang:display(block_mat:test_time(get(max_length),true)).
 
-max_length_test() ->
+max_length_testi() ->
     M1 = generateRandMat(7,4),
     erlang:display(M1),
     M2 = block_mat:matrix(M1),
@@ -22,18 +59,18 @@ max_length_test() ->
     erlang:display(block_mat:toErl(block_mat:eye(7))),
     erlang:display(block_mat:toErl(block_mat:matrix(M1))).
 
-numerl_test() ->
+numerl_testi() ->
     M1 = numerl:matrix([[4,2],[2,2]]),
     M2 = numerl:matrix([[3,5],[5,4]]),
     erlang:display(numerl:mtfli(numerl:dot(M1,M2))).
 
-eye_test()->
+eye_testi()->
     N = rand:uniform(25),
     erlang:display(N),
     Mat = block_mat:eye(N),
     block_mat:display_mat(Mat).
 
-add_test() ->
+add_testi() ->
     N = 2,
     M = 2,
     M1 = generateRandMat(N,M),
@@ -56,19 +93,16 @@ add_test() ->
     %printDim(B),
     %printDim(C).
 
-
-mult_test() ->
+mult_testi() ->
     M = rand:uniform(10),
     N = rand:uniform(10),
     P = rand:uniform(10),
     io:format("M : ~w, N : ~w, P : ~w~n",[M,N,P]),
-    A = generateRandMat(M,N),
-    B = generateRandMat(N,P),
+    A = generateRandMat(M,P),
+    B = generateRandMat(P,N),
     NumA = block_mat:matrix(A),
     NumB = block_mat:matrix(B),
-    block_mat:display_mat(NumA),
-    block_mat:display_mat(NumB),
-    block_mat:display_mat(block_mat:mult(NumA,NumB)).
+    erlang:display(lists:flatten(io_lib:format("~w",[block_mat:toErl(block_mat:mult(NumA,NumB))]))).
     %io:format("test passed ? : ~w~n", [numerl:dot(C,D)==block_mat:mult2(NumA,NumB)]).
 
 testInv() ->
@@ -80,7 +114,7 @@ testInv() ->
     %io:format("~w~n",[R2]),
     io:format("test passed ? : ~w~n", [numerl:'=='(R1,R2)]).
 
-matrix_test() ->
+matrix_testi() ->
     erlang:display("matrix test~n"),
     N = 10,
     M = 10,
@@ -89,7 +123,7 @@ matrix_test() ->
     %erlang:display(A).
     printDim(A).
 
-zeros_test() ->
+zeros_testi() ->
     %N = 5,
     N = rand:uniform(20),
     M = rand:uniform(20),

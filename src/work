@@ -39,5 +39,14 @@
         Durant le second, même chose mais mutliplie par 1.2 à chaque fois, et en commençant avec la valeur du premier round.
         Le premier round est répété 5 fois, et la valeur passée en argument au deuxième round est le minimum de ces 5 itérations.
         Le second round est répété 20 fois, et la valeur choisie comme valeur finale pour le paramètre max_length est la 2eme plus petite valeur,
-            pour éviter les (rares - 1/40 en moyenne pour ma tres instable VM) outliers à valeur basse.
+            pour éviter les (rares - 1/80 en moyenne pour ma tres instable VM) outliers à valeur basse.
+
+03/03 - B :
+    réalisé une fonction matrix_conc qui fait la même chose que matrix, mais de manière concurrente. Spawn un nouveau processus à chaque appel récursif à matrix, 
+        ainsi qu'à chaque appel à append ou recompose. L'overhead sur les perfomances est évidemment énorme si on garde des matrices 5x5, parce qu'elles se font en 
+        1µs sur ma machine, donc le fait de spawner un processus, d'envoyer un message pour le résultat etc. à chaque fois rend la chose beaucoup plus lente. Pour les
+        50x50 (1ms sur ma machine), on reste sur un overhead conséquent (2 à 3 fois plus long pour max length à 100 et 1000x1000). Cependant, la version 
+        non concurrente de matrix utilise aussi tous les coeurs (la magie d'erlang ?) donc pas d'économies substentielles...
+    corrigé un autre bug dans dgemm, qui ne s'exécutait pas quand B n'était pas carrée... c'était long >:(
+    j'ai fait pareil pour zeros que pour matrix, et même problème... et la version de base utilise aussi tous les coeurs.
         
