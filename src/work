@@ -49,4 +49,10 @@
         non concurrente de matrix utilise aussi tous les coeurs (la magie d'erlang ?) donc pas d'économies substentielles...
     corrigé un autre bug dans dgemm, qui ne s'exécutait pas quand B n'était pas carrée... c'était long >:(
     j'ai fait pareil pour zeros que pour matrix, et même problème... et la version de base utilise aussi tous les coeurs.
-        
+
+05/03 - L : 
+    Inversion matricielle faite. J'ai rajouter une fonction scal qui fait la multiplication d'une matrice par un scalaire.
+    Faudra peut etre la fusionner avec une fonction de multiplication plus générale.
+    C'était nécessaire pour multiplier par -1. L'inversion fonctionne jusqu'à MAX_LENGTH = 18 ou ca segfault dans numerl.
+    Aussi un probleme est que vu qu'on fait des inversions sur des sous-matrices il se peut que une sous-matrice soit singuliere et donc pas inverible alors que la matrice générale est inversible.
+    C'est clairement un probleme de l'algorithme d'inversion et pas du code en lui même donc faudra peut etre trouver un autre algo...

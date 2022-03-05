@@ -498,22 +498,25 @@ lineSum(List, Acc) ->
         Acc
     end.
 
+scal(Const, M) ->
+    lists:map(fun(Row) -> lists:map(fun(Elem)-> numerl:mult(Elem, Const) end, Row) end,M).
+
 inv(M1) ->
-    MAX_LENGTH = get(max_length),
     Len = length(M1),
-    if Len > MAX_LENGTH ->
+    if Len > 1 ->
         {A,B,C,D} = split4(M1),
         InvA = inv(A),
         InvAB = mult(InvA,B),
         CInvA = mult(C,InvA),
         C4 = inv(sub(D,mult(C,InvAB))), % inv(D-C InvA B)
         Big = mult(C4,CInvA),
-        C3 = numerl:dot(-1,Big), % need to change to use ours
-        C2 = numerl:dot(-1,mult(InvAB,C4)), % need to change to use ours
+        C3 = scal(-1,Big),
+        C2 = scal(-1,mult(InvAB,C4)),
         C1 = add(InvA,mult(InvAB,Big)),
         recompose4(C1,C2,C3,C4);
     true ->
-        numerl:inv(M1)
+        [[Bin]] = M1,
+        [[numerl:inv(Bin)]]
     end.
 
 
@@ -608,7 +611,7 @@ appendList(L) ->
     end.
 
 toErl(M) ->
-    appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfli(Elem) end, Row)) end,M)).
+    appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfl(Elem) end, Row)) end,M)).
 
 generateRandMat(0,_) ->
     [];
