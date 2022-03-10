@@ -4,15 +4,42 @@
 -import(persistent_term,[get/1,put/2]).
 -include_lib("eunit/include/eunit.hrl").
 
+tr_testi() ->
+    Mat1 = block_mat:matrix(generateRandMat(7,8)),
+    erlang:display(block_mat:toErl(Mat1)),
+    erlang:display(block_mat:toErl(block_mat:transpose(Mat1))).
+
+dgemm_testi() ->
+    Mat1 = block_mat:matrix(generateRandMat(2,2)),
+    erlang:display(mat1),
+    erlang:display(block_mat:toErl(Mat1)),
+    Mat2 = block_mat:matrix(generateRandMat(2,2)),
+    erlang:display(mat2),
+    erlang:display(block_mat:toErl(Mat2)),
+    Mat3 = block_mat:matrix(generateRandMat(2,2)),
+    erlang:display(mat3),
+    erlang:display(block_mat:toErl(Mat3)),
+    erlang:display(mult),
+    erlang:display(block_mat:toErl(block_mat:mult(Mat1,Mat2))),
+    erlang:display(dgemm),
+    erlang:display(block_mat:toErl(block_mat:dgemm(false,false,1.0,0.0,Mat1,Mat2,Mat3))),
+    erlang:display(plusC),
+    erlang:display(block_mat:toErl(block_mat:dgemm(false,false,1.0,1.0,Mat1,Mat2,Mat3))),
+    erlang:display(transpA),
+    erlang:display(block_mat:toErl(block_mat:dgemm(true,false,1.0,0.0,Mat1,Mat2,Mat3))),
+    erlang:display(transpB),
+    erlang:display(block_mat:toErl(block_mat:dgemm(false,true,1.0,0.0,Mat1,Mat2,Mat3))),
+    erlang:display(halfAB),
+    erlang:display(block_mat:toErl(block_mat:dgemm(false,false,0.5,0.0,Mat1,Mat2,Mat3))),
+    erlang:display(halfC),
+    erlang:display(block_mat:toErl(block_mat:dgemm(false,false,1.0,0.5,Mat1,Mat2,Mat3))).
+
 dims_testi() ->
     Mat = generateRandMat(12,16),
     Mat2 = block_mat:matrix(Mat),
     erlang:display(block_mat:dims(Mat2)).
 
-%oui_test_() ->
-%    {timeout, 2, test_SUITE:conc_test()}.
-
-oui_test_() ->
+oui_testi_() ->
     {timeout, 10,
         fun() ->
                 zeros_conc_testi()

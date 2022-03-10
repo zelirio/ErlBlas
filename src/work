@@ -56,3 +56,6 @@
     C'était nécessaire pour multiplier par -1. L'inversion fonctionne jusqu'à MAX_LENGTH = 18 ou ca segfault dans numerl.
     Aussi un probleme est que vu qu'on fait des inversions sur des sous-matrices il se peut que une sous-matrice soit singuliere et donc pas inverible alors que la matrice générale est inversible.
     C'est clairement un probleme de l'algorithme d'inversion et pas du code en lui même donc faudra peut etre trouver un autre algo...
+
+10/03 - B :
+    interface de dgemm exposée, fonctionne pour quelques tests simples avec chaque fois un paramètre qui change % à la multiplication.

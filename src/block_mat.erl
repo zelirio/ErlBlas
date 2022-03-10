@@ -4,8 +4,8 @@
 -import(persistent_term,[get/1,put/2]).
 -on_load(benchmark/0).
 
--export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1, first_try_benchmark/0, test_time/2,matrix_conc/1,zeros_conc/2]).
--export([append/1,appendEach/1,recompose4/1,matrix_conc/4,dims/1,zeros_conc/3]).
+-export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1, first_try_benchmark/0, test_time/2,matrix_conc/1,zeros_conc/2, dgemm/7]).
+-export([append/1,appendEach/1,recompose4/1,matrix_conc/4,dims/1,zeros_conc/3,tr/1, transpose/1]).
 
 -type matrix() :: [[number(), ...], ...].
 
@@ -465,6 +465,10 @@ sub(M1, M2) ->
 mult(M1, M2) ->
     multT(M1, tr(M2)).
 
+transpose(M) ->
+    Tr = tr(M),
+    lists:map(fun(Row) -> lists:map(fun(Elem) -> numerl:transpose(Elem) end, Row) end,Tr).
+
 tr(M) ->
     tr(M, []).
 
@@ -676,3 +680,31 @@ test_time(N,true) ->
 
 dims(Mat) ->
     lists:map(fun(Row) -> lists:map(fun({matrix,N,M,_}) -> {N,M} end,Row) end,Mat).
+
+% interface BLAS
+
+dgemm(ATransp, BTransp, Alpha, Beta, M1, M2, M3) ->
+    case {ATransp, Alpha} of
+        {false, 1.0} ->
+            A = M1;
+        {true, 1.0} ->
+            A = transpose(M1);
+
+        {false, Alpha} ->
+            A = scal(Alpha,M1);
+        {true, Alpha} ->
+            A = scal(Alpha,transpose(M1))
+    end,
+    case BTransp of
+        false ->
+            B = M2;
+        true ->
+            B = transpose(M2)
+    end,
+    case Beta of
+        1.0 ->
+            C = M3;
+        Beta ->
+            C = scal(Beta,M3)
+    end,
+    add(mult(A,B),C).
