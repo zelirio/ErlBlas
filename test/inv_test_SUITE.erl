@@ -33,7 +33,7 @@ max_size_blocks_test() ->
 
 random_test() ->
     N = 13,
-    M = generateRandMat(N, N),
+    M = utils:generateRandMat(N, N),
     Num = numerl:matrix(M),
     NumResult = numerl:inv(Num),
     ErlNum = numerl:mtfl(NumResult),
@@ -41,17 +41,3 @@ random_test() ->
     BlockResult = block_mat:inv(Block),
     ErlBlock = block_mat:toErl(BlockResult),
     ?assert(mat:'=='(ErlBlock, ErlNum)).
-
-
-
-generateRandMat(0,_) ->
-    [];
-generateRandMat(Dim1,Dim2) ->
-    [generateRandVect(Dim2)|generateRandMat(Dim1-1,Dim2)].
-    
-
-generateRandVect(0) ->
-    [];
-
-generateRandVect(Dim2) ->
-    [rand:uniform(5)|generateRandVect(Dim2-1)].
