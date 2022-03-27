@@ -1,6 +1,6 @@
 -module(mult_test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
--export([base_test/0, max_size_blocks_test/0, float_test/0, random_square_test/0, random_rectangle_test/0]).
+-include_lib("eunit/include/eunit.hrl").
 
 base_test() ->
     A = [[1]],

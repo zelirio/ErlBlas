@@ -1,13 +1,24 @@
 -module(test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
--compile({no_auto_import,[get/1,put/2]}).
--import(persistent_term,[get/1,put/2]).
 -include_lib("eunit/include/eunit.hrl").
 
 tr_testi() ->
     Mat1 = block_mat:matrix(generateRandMat(7,8)),
     erlang:display(block_mat:toErl(Mat1)),
     erlang:display(block_mat:toErl(block_mat:transpose(Mat1))).
+
+daxpy_test() ->
+    Xb = generateRandMat(7,8),
+    X = block_mat:matrix(Xb),
+    XN = numerl:matrix(Xb),
+    Yb = generateRandMat(7,8),
+    YN = numerl:matrix(Yb),
+    Y = block_mat:matrix(Yb),
+    block_mat:daxpy(1.5, X, Y),
+    numerl:daxpy(1.5, XN, YN),
+    ?assertNot(mat:'=='(Yb, block_mat:toErl(Y))), % Y has changed
+    ?assert(mat:'=='(numerl:mtfl(YN), block_mat:toErl(Y))). % Value is correct
+
 
 dgemm_testi() ->
     Mat1 = block_mat:matrix(generateRandMat(2,2)),

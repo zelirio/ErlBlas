@@ -1,6 +1,6 @@
 -module(matrix_test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
--export([base_test/0, small_test/0, line_test/0, column_test/0, max_size_blocks_test/0, rest_test/0]).
+-include_lib("eunit/include/eunit.hrl").
 
 % test done for MAX_LENGTH = 5
 

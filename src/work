@@ -60,8 +60,13 @@
 10/03 - B :
     interface de dgemm exposée, fonctionne pour quelques tests simples avec chaque fois un paramètre qui change % à la multiplication.
 
-13/30 - L:
+13/03 - L:
     quelques test pour add et mult. Rajouter une fonction equals dans block_mat pour check que 2 matrice block sont egales.
     J'ai rajouter un fichier utils.erl pour mettre les fonctions qui n'ont pas forecment qcch a faire dans le main.
     j'ai du coup modif les fonctions actuelles pour utiliser utils et supprimer les fonctions du main fichier.
     testé et approuvé.
+
+27/03 - L:
+    Fix un bug dans dgemm ou il faisait des scal inutile si on donnais 1 au lieu de 1.0.
+    import des fonctions de utils pour plus de lisibilité dans le code.
+    daxpy en place rajouté dans numerl et block_mat.

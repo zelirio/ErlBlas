@@ -1,6 +1,6 @@
 -module(inv_test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
--export([base_test/0, max_size_blocks_test/0, random_test/0]).
+-include_lib("eunit/include/eunit.hrl").
 
 base_test() -> 
     M = [[1]],

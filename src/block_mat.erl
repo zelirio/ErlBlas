@@ -3,8 +3,9 @@
 -compile({no_auto_import,[get/1,put/2]}).
 -import(persistent_term,[get/1,put/2]).
 -on_load(benchmark/0).
+-import(utils,[split4/1, recompose4/4, appendEach/2, appendEachList/1, appendList/1, generateRandMat/2, splitLine/4, split4/3]).
 
--export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1, equals/2, first_try_benchmark/0, test_time/2,matrix_conc/1,zeros_conc/2, dgemm/7]).
+-export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1, equals/2, first_try_benchmark/0, test_time/2,matrix_conc/1,zeros_conc/2, dgemm/7, daxpy/3]).
 -export([matrix_conc/4,dims/1,zeros_conc/3,tr/1, transpose/1]).
 
 -type matrix() :: [[number(), ...], ...].
@@ -21,13 +22,13 @@ eye(N) ->
             Mat2 = zeros(MAX_LENGTH, (DivN-1)*MAX_LENGTH),
             Mat3 = zeros((DivN-1)*MAX_LENGTH,MAX_LENGTH),
             Mat4 = eye((DivN-1)*MAX_LENGTH),
-            utils:recompose4(Mat1, Mat2, Mat3, Mat4);
+            recompose4(Mat1, Mat2, Mat3, Mat4);
         true ->
             Mat1 = eye(RestN),
             Mat2 = zeros(RestN, DivN*MAX_LENGTH),
             Mat3 = zeros(DivN*MAX_LENGTH,RestN),
             Mat4 = eye(DivN*MAX_LENGTH),
-            utils:recompose4(Mat1, Mat2, Mat3, Mat4)
+            recompose4(Mat1, Mat2, Mat3, Mat4)
         end
     end.
 
@@ -55,16 +56,16 @@ matrix(Mat, N, M) ->
         RestM = M rem MAX_LENGTH,
         DivM = M div MAX_LENGTH,
         if(RestM ==0 ) ->
-            {L, R} = utils:splitLine(Mat,[],[], MAX_LENGTH),
+            {L, R} = splitLine(Mat,[],[], MAX_LENGTH),
             A = matrix(L, N,MAX_LENGTH), 
             B = matrix(R, N, (DivM -1)* MAX_LENGTH),
-            utils:appendEach(A, B);
+            appendEach(A, B);
         true ->
             %(3x26)
-            {L, R} = utils:splitLine(Mat,[],[], RestM),
+            {L, R} = splitLine(Mat,[],[], RestM),
             A = matrix(L, N,RestM),
             B = matrix(R, N, DivM* MAX_LENGTH),
-            utils:appendEach(A, B)
+            appendEach(A, B)
         end;
 
     N > MAX_LENGTH, M =< MAX_LENGTH ->
@@ -93,38 +94,38 @@ matrix(Mat, N, M) ->
         if RestM == 0 ->
             if RestN == 0 ->
                 %(25, 25)
-                {A, B, C, D} = utils:split4(Mat, MAX_LENGTH, MAX_LENGTH),
+                {A, B, C, D} = split4(Mat, MAX_LENGTH, MAX_LENGTH),
                 Mat1 = matrix(A, MAX_LENGTH, MAX_LENGTH),
                 Mat2 = matrix(B, MAX_LENGTH, (DivM-1)*MAX_LENGTH),
                 Mat3 = matrix(C, (DivN-1)*MAX_LENGTH, MAX_LENGTH),
                 Mat4 = matrix(D, (DivN-1)*MAX_LENGTH, (DivM-1)*MAX_LENGTH),
-                utils:recompose4(Mat1, Mat2, Mat3, Mat4);
+                recompose4(Mat1, Mat2, Mat3, Mat4);
             true ->
                 %(26, 25)
-                {A, B, C, D} = utils:split4(Mat, RestN, MAX_LENGTH),
+                {A, B, C, D} = split4(Mat, RestN, MAX_LENGTH),
                 Mat1 = matrix(A, RestN, MAX_LENGTH),
                 Mat2 = matrix(B, RestN, (DivM-1)*MAX_LENGTH),
                 Mat3 = matrix(C, (DivN)*MAX_LENGTH, MAX_LENGTH),
                 Mat4 = matrix(D, (DivN)*MAX_LENGTH, (DivM-1)*MAX_LENGTH),
-                utils:recompose4(Mat1, Mat2, Mat3, Mat4)
+                recompose4(Mat1, Mat2, Mat3, Mat4)
             end;
         true ->
             if RestN == 0 ->
                 %(25, 26)
-                {A, B, C, D} = utils:split4(Mat, MAX_LENGTH, RestM),
+                {A, B, C, D} = split4(Mat, MAX_LENGTH, RestM),
                 Mat1 = matrix(A, MAX_LENGTH, RestM),
                 Mat2 = matrix(B, MAX_LENGTH, (DivM)*MAX_LENGTH),
                 Mat3 = matrix(C, (DivN-1)*MAX_LENGTH, RestM),
                 Mat4 = matrix(D, (DivN-1)*MAX_LENGTH, (DivM)*MAX_LENGTH),
-                utils:recompose4(Mat1, Mat2, Mat3, Mat4);
+                recompose4(Mat1, Mat2, Mat3, Mat4);
             true ->
                 %(26, 26)
-                {A, B, C, D} = utils:split4(Mat, RestN, RestM),
+                {A, B, C, D} = split4(Mat, RestN, RestM),
                 Mat1 = matrix(A, RestN, RestM),
                 Mat2 = matrix(B, RestN, (DivM)*MAX_LENGTH),
                 Mat3 = matrix(C, (DivN)*MAX_LENGTH, RestM),
                 Mat4 = matrix(D, (DivN)*MAX_LENGTH, (DivM)*MAX_LENGTH),
-                utils:recompose4(Mat1, Mat2, Mat3, Mat4)
+                recompose4(Mat1, Mat2, Mat3, Mat4)
             end
         end
     end.
@@ -149,7 +150,7 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
         RestM = M rem MAX_LENGTH,
         DivM = M div MAX_LENGTH,
         if(RestM ==0 ) ->
-            {L, R} = utils:splitLine(Mat,[],[], MAX_LENGTH),
+            {L, R} = splitLine(Mat,[],[], MAX_LENGTH),
             Append = spawn(utils,appendEach,[{self(), result}]),
             spawn(block_mat,matrix_conc,[L, N,MAX_LENGTH,{Append,a}]), 
             spawn(block_mat,matrix_conc,[R, N, (DivM -1)* MAX_LENGTH, {Append,b}]),
@@ -159,7 +160,7 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
             end;
         true ->
             %(3x26)
-            {L, R} = utils:splitLine(Mat,[],[], RestM),
+            {L, R} = splitLine(Mat,[],[], RestM),
             Append = spawn(utils,appendEach,[{self(),result}]),
             spawn(block_mat,matrix_conc,[L, N,RestM,{Append,a}]),
             spawn(block_mat,matrix_conc,[R, N, DivM* MAX_LENGTH,{Append,b}]),
@@ -204,7 +205,7 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
         if RestM == 0 ->
             if RestN == 0 ->
                 %(25, 25)
-                {A, B, C, D} = utils:split4(Mat, MAX_LENGTH, MAX_LENGTH),
+                {A, B, C, D} = split4(Mat, MAX_LENGTH, MAX_LENGTH),
                 Recompose = spawn(utils,recompose4,[{self(),result}]),
                 spawn(block_mat,matrix_conc,[A, MAX_LENGTH, MAX_LENGTH,{Recompose, a}]),
                 spawn(block_mat,matrix_conc,[B, MAX_LENGTH, (DivM-1)*MAX_LENGTH,{Recompose, b}]),
@@ -216,7 +217,7 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
                 end;
             true ->
                 %(26, 25)
-                {A, B, C, D} = utils:split4(Mat, RestN, MAX_LENGTH),
+                {A, B, C, D} = split4(Mat, RestN, MAX_LENGTH),
                 Recompose = spawn(utils, recompose4,[{self(),result}]),
                 spawn(block_mat,matrix_conc,[A, RestN, MAX_LENGTH,{Recompose, a}]),
                 spawn(block_mat,matrix_conc,[B, RestN, (DivM-1)*MAX_LENGTH,{Recompose, b}]),
@@ -230,7 +231,7 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
         true ->
             if RestN == 0 ->
                 %(25, 26)
-                {A, B, C, D} = utils:split4(Mat, MAX_LENGTH, RestM),
+                {A, B, C, D} = split4(Mat, MAX_LENGTH, RestM),
                 Recompose = spawn(utils, recompose4,[{self(),result}]),
                 spawn(block_mat,matrix_conc,[A, MAX_LENGTH, RestM,{Recompose, a}]),
                 spawn(block_mat,matrix_conc,[B, MAX_LENGTH, (DivM)*MAX_LENGTH,{Recompose, b}]),
@@ -242,7 +243,7 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
                 end;
             true ->
                 %(26, 26)
-                {A, B, C, D} = utils:split4(Mat, RestN, RestM),
+                {A, B, C, D} = split4(Mat, RestN, RestM),
                 Recompose = spawn(utils, recompose4,[{self(),result}]),
                 spawn(block_mat,matrix_conc,[A, RestN, RestM,{Recompose, a}]),
                 spawn(block_mat,matrix_conc,[B, RestN, (DivM)*MAX_LENGTH,{Recompose, b}]),
@@ -273,12 +274,12 @@ zeros(N,M) ->
                 %(3x25) 
                 A = zeros(N,MAX_LENGTH), 
                 B = zeros(N,(DivM-1)*MAX_LENGTH), 
-                utils:appendEach(A,B);
+                appendEach(A,B);
             true ->
                 %(3x26)
                 A = zeros(N,RestM),
                 B = zeros(N,(DivM)*MAX_LENGTH),
-                utils:appendEach(A,B)
+                appendEach(A,B)
             end
         end;
     true ->
@@ -302,14 +303,14 @@ zeros(N,M) ->
                     Mat2 = zeros(MAX_LENGTH,(DivM-1)*MAX_LENGTH),
                     Mat3 = zeros((DivN-1)*MAX_LENGTH,MAX_LENGTH),
                     Mat4 = zeros((DivN-1)*MAX_LENGTH,(DivM-1)*MAX_LENGTH),
-                    utils:recompose4(Mat1, Mat2, Mat3, Mat4);
+                    recompose4(Mat1, Mat2, Mat3, Mat4);
                 true ->
                     %(26x25)
                     Mat1 = zeros(RestN,MAX_LENGTH),
                     Mat2 = zeros(RestN,(DivM-1)*MAX_LENGTH),
                     Mat3 = zeros((DivN)*MAX_LENGTH,MAX_LENGTH),
                     Mat4 = zeros((DivN)*MAX_LENGTH,(DivM-1)*MAX_LENGTH),
-                    utils:recompose4(Mat1, Mat2, Mat3, Mat4)
+                    recompose4(Mat1, Mat2, Mat3, Mat4)
                 end;
             true ->
                 if RestN == 0 ->
@@ -318,14 +319,14 @@ zeros(N,M) ->
                     Mat2 = zeros(MAX_LENGTH, (DivM)*MAX_LENGTH),
                     Mat3 = zeros((DivN-1)*MAX_LENGTH,RestM),
                     Mat4 = zeros((DivN-1)*MAX_LENGTH,(DivM)*MAX_LENGTH),
-                    utils:recompose4(Mat1, Mat2, Mat3, Mat4);
+                    recompose4(Mat1, Mat2, Mat3, Mat4);
                 true ->
                     %(26x26)
                     Mat1 = zeros(RestN,RestM),
                     Mat2 = zeros(RestN,(DivM)*MAX_LENGTH),
                     Mat3 = zeros((DivN)*MAX_LENGTH,RestM),
                     Mat4 = zeros((DivN)*MAX_LENGTH,(DivM)*MAX_LENGTH),
-                    utils:recompose4(Mat1, Mat2, Mat3, Mat4)
+                    recompose4(Mat1, Mat2, Mat3, Mat4)
                 end
             end
         end
@@ -508,7 +509,7 @@ scal(Const, M) ->
 inv(M1) ->
     Len = length(M1),
     if Len > 1 ->
-        {A,B,C,D} = utils:split4(M1),
+        {A,B,C,D} = split4(M1),
         InvA = inv(A),
         InvAB = mult(InvA,B),
         CInvA = mult(C,InvA),
@@ -517,14 +518,14 @@ inv(M1) ->
         C3 = scal(-1,Big),
         C2 = scal(-1,mult(InvAB,C4)),
         C1 = add(InvA,mult(InvAB,Big)),
-        utils:recompose4(C1,C2,C3,C4);
+        recompose4(C1,C2,C3,C4);
     true ->
         [[Bin]] = M1,
         [[numerl:inv(Bin)]]
     end.
 
 toErl(M) ->
-    utils:appendList(lists:map(fun(Row) -> utils:appendEachList(lists:map(fun(Elem)-> numerl:mtfl(Elem) end, Row)) end,M)).
+    appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfl(Elem) end, Row)) end,M)).
 
 equals(M1, M2) ->
     Eq = element_wise_op(fun numerl:equals/2, M1, M2),
@@ -558,7 +559,7 @@ round_two_benchmark(N) ->
 
 test_time(N,true) ->
     timer:sleep(100),
-    M = utils:generateRandMat(N,N),
+    M = generateRandMat(N,N),
     Mat = numerl:matrix(M),
     TimesValues = [timer:tc(numerl,dot,[Mat,Mat]) || _ <- lists:seq(1,50)],
     Times = [Time || {Time, _} <- TimesValues],
@@ -571,7 +572,7 @@ test_time(N,true) ->
     end;
 
     test_time(N,false) ->
-        M = utils:generateRandMat(N,N),
+        M = generateRandMat(N,N),
         Mat = numerl:matrix(M),
         {Time,_} = timer:tc(numerl,dot,[Mat,Mat]),
         if Time <1000 ->
@@ -587,7 +588,7 @@ dims(Mat) ->
 % interface BLAS
 
 dgemm(ATransp, BTransp, Alpha, Beta, M1, M2, M3) ->
-    case {ATransp, Alpha} of
+    case {ATransp, float(Alpha)} of
         {false, 1.0} ->
             A = M1;
         {true, 1.0} ->
@@ -604,10 +605,13 @@ dgemm(ATransp, BTransp, Alpha, Beta, M1, M2, M3) ->
         true ->
             B = transpose(M2)
     end,
-    case Beta of
+    case float(Beta) of
         1.0 ->
             C = M3;
         Beta ->
             C = scal(Beta,M3)
     end,
     add(mult(A,B),C).
+
+daxpy(Alpha, X, Y) ->
+    element_wise_op(fun (A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
