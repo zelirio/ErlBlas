@@ -5,7 +5,7 @@
 -on_load(benchmark/0).
 -import(utils,[split4/1, recompose4/4, appendEach/2, appendEachList/1, appendList/1, generateRandMat/2, splitLine/4, split4/3]).
 
--export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1, equals/2, first_try_benchmark/0, test_time/2,matrix_conc/1,zeros_conc/2, dgemm/7, daxpy/3]).
+-export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, display_mat/1, toErl/1, equals/2, first_try_benchmark/0, test_time/2,matrix_conc/1,zeros_conc/2, dgemm/7, daxpy/3, dscal/2]).
 -export([matrix_conc/4,dims/1,zeros_conc/3,tr/1, transpose/1]).
 
 -type matrix() :: [[number(), ...], ...].
@@ -615,3 +615,6 @@ dgemm(ATransp, BTransp, Alpha, Beta, M1, M2, M3) ->
 
 daxpy(Alpha, X, Y) ->
     element_wise_op(fun (A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
+
+dscal(Alpha, X) ->
+    lists:map(fun(Row) -> lists:map(fun(A) -> numerl:dscal(Alpha, A) end, Row) end, X).

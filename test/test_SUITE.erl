@@ -19,6 +19,14 @@ daxpy_test() ->
     ?assertNot(mat:'=='(Yb, block_mat:toErl(Y))), % Y has changed
     ?assert(mat:'=='(numerl:mtfl(YN), block_mat:toErl(Y))). % Value is correct
 
+dscal_test() ->
+    Xb = generateRandMat(7,8),
+    X = block_mat:matrix(Xb),
+    XN = numerl:matrix(Xb),
+    block_mat:dscal(1.5, X),
+    numerl:dscal(1.5, XN),
+    ?assertNot(mat:'=='(Xb, block_mat:toErl(X))), % Y has changed
+    ?assert(mat:'=='(numerl:mtfl(XN), block_mat:toErl(X))). % Value is correct
 
 dgemm_testi() ->
     Mat1 = block_mat:matrix(generateRandMat(2,2)),

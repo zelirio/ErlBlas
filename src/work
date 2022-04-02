@@ -70,3 +70,6 @@
     Fix un bug dans dgemm ou il faisait des scal inutile si on donnais 1 au lieu de 1.0.
     import des fonctions de utils pour plus de lisibilité dans le code.
     daxpy en place rajouté dans numerl et block_mat.
+
+02/04 - L:
+    Fonction dscal en place rajouté dans numerl et block_mat.
