@@ -1,5 +1,6 @@
 -module(utils).
--export([generateRandMat/2, append/1, appendEach/1, appendEach/2, appendEachList/1, appendList/1, splitLine/3, split4/1, recompose4/4, recompose4/1, split4/3, splitLine/4]).
+-export([generateRandMat/2, append/1, appendEach/1, appendEach/2, appendEachList/1, appendList/1, splitLine/3, split4/1, recompose4/4, recompose4/1, split4/3, splitLine/4, element_wise_op/3, display_mat/1, lineSum/1]).
+-export([element_wise_op_conc/3, sendResult/4]).
 
 generateRandMat(0,_) ->
     [];
@@ -101,3 +102,28 @@ appendList(L) ->
         [H|[]] ->H;
         [H|T] -> lists:append(H, appendList(T))
     end.
+
+display_mat(M) ->
+    lists:map(fun(Row) -> lists:map(fun(Elem)-> erlang:display(numerl:mtfli(Elem)) end, Row) end,M).
+
+
+element_wise_op(Op, M1, M2) ->
+    lists:zipwith(fun(L1, L2) -> lists:zipwith(Op, L1, L2) end, M1, M2).
+
+element_wise_op_conc(Op, M1, M2) ->
+    PidMat = lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1, E2) -> spawn(utils, sendResult, [Op, E1, E2, self()]) end, L1, L2) end, M1, M2),
+    lists:map(fun(Row) -> lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, Row) end, PidMat).
+
+sendResult(Op, Elem1,Elem2, ParentPID) -> 
+    ParentPID ! {Op(Elem1, Elem2), self()}.
+
+lineSum([H|T]) ->
+    lineSum(T, H).
+
+lineSum(List, Acc) ->
+    case List of [H|T] ->
+        lineSum(T, numerl:add(Acc, H));
+    [] ->
+        Acc
+    end.
+

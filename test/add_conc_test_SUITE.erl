@@ -1,15 +1,15 @@
--module(mult_test_SUITE).
+-module(add_conc_test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
 base_test() ->
     A = [[1]],
     B = [[1]],
-    C = [[1]],
+    C = [[2]],
     ABlock = block_mat:matrix(A),
     BBlock = block_mat:matrix(B),
     CBlock = block_mat:matrix(C),
-    Res = block_mat:mult(ABlock, BBlock),
+    Res = block_mat:add_conc(ABlock, BBlock),
     ?assert(block_mat:equals(Res, CBlock)).
 
 max_size_blocks_test() ->
@@ -35,36 +35,36 @@ max_size_blocks_test() ->
          [2,4,6,8,10,12,14,16,18,20],
          [2,4,6,8,10,12,14,16,18,20]],
 
-    C = [[110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100],
-         [110,220,330,440,550,660,770,880,990,1100]],
+    C = [[3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30],
+         [3,6,9,12,15,18,21,24,27,30]],
 
     ABlock = block_mat:matrix(A),
     BBlock = block_mat:matrix(B),
     CBlock = block_mat:matrix(C),
-    Res = block_mat:mult(ABlock, BBlock),
+    Res = block_mat:add_conc(ABlock, BBlock),
     ?assert(block_mat:equals(Res, CBlock)).
 
 float_test() ->
-    A = [[-1.2,2.5,3.6,4.7,5.69, 42.69],
-         [6.24,7.77,8.42,-9.58,10.013, 69.42]],
+    A = [[1.2,2.5,3.6,4.7,5.69, 42.69],
+         [6.24,7.77,8.42,9.58,10.013, 69.42]],
 
-    B = [[1.2,2.5],[3.6,4.7],[-5.69, 42.69],
-         [6.24,-7.77],[8.42,9.58],[-10.013, 69.42]],
+    B = [[1.2,2.5,3.6,4.7,5.69, 42.69],
+         [6.24,7.77,8.42,9.58,10.013, 69.42]],
 
     ABlock = block_mat:matrix(A),
     BBlock = block_mat:matrix(B),
-    Res = block_mat:mult(ABlock, BBlock),
+    Res = block_mat:add_conc(ABlock, BBlock),
     ANum = numerl:matrix(A),
     BNum = numerl:matrix(B),
-    Conf = numerl:dot(ANum, BNum),
+    Conf = numerl:add(ANum, BNum),
     Expected = numerl:mtfl(Conf),
     Actual = block_mat:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
@@ -75,10 +75,10 @@ random_square_test() ->
     B = utils:generateRandMat(N, N),
     ABlock = block_mat:matrix(A),
     BBlock = block_mat:matrix(B),
-    Res = block_mat:mult(ABlock, BBlock),
+    Res = block_mat:add_conc(ABlock, BBlock),
     ANum = numerl:matrix(A),
     BNum = numerl:matrix(B),
-    Conf = numerl:dot(ANum, BNum),
+    Conf = numerl:add(ANum, BNum),
     Expected = numerl:mtfl(Conf),
     Actual = block_mat:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
@@ -87,33 +87,13 @@ random_rectangle_test() ->
     N = 13,
     M = 7,
     A = utils:generateRandMat(N, M),
-    B = utils:generateRandMat(M, N),
+    B = utils:generateRandMat(N, M),
     ABlock = block_mat:matrix(A),
     BBlock = block_mat:matrix(B),
-    Res = block_mat:mult(ABlock, BBlock),
+    Res = block_mat:add_conc(ABlock, BBlock),
     ANum = numerl:matrix(A),
     BNum = numerl:matrix(B),
-    Conf = numerl:dot(ANum, BNum),
+    Conf = numerl:add(ANum, BNum),
     Expected = numerl:mtfl(Conf),
     Actual = block_mat:toErl(Res),
-    ?assert(mat:'=='(Expected, Actual)).
-
-
-dgemm_test() ->
-    N = 3,
-    A = utils:generateRandMat(N, N),
-    B = utils:generateRandMat(N, N),
-    ABlock = block_mat:matrix(A),
-    BBlock = block_mat:matrix(B),
-    C = utils:generateRandMat(N, N),
-    CBlock = block_mat:matrix(C),
-    Gnagna = block_mat:transpose(BBlock),
-    Gnagna2 = block_mat:transpose(ABlock),
-    Res = block_mat:dgemm(true, true, 1.0, Gnagna2, Gnagna, 1.0, CBlock),
-    ANum = numerl:matrix(A),
-    BNum = numerl:matrix(B),
-    CNum = numerl:matrix(C),
-    Conf = numerl:dot(ANum, BNum),
-    Expected = numerl:mtfl(numerl:add(Conf,CNum)),
-    Actual = block_mat:toErl(CBlock),
     ?assert(mat:'=='(Expected, Actual)).
