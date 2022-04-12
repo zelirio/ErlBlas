@@ -73,3 +73,10 @@
 
 02/04 - L:
     Fonction dscal en place rajouté dans numerl et block_mat.
+
+08/04 - B&L:
+    code plus propre
+    dgemm en place (premiers tests okay)
+
+12/04 - B:
+    dgemm en place concurrent, chaque appel à numerl:dgemm (un par elem de C) dans un process different, un test ok.

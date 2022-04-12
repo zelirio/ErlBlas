@@ -599,8 +599,8 @@ dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
             lists:zipwith(
                 fun(RowB, ElemC) -> 
                     lists:zipwith(
-                        fun(ElemA, ElemB) -> 
-                            numerl:dgemm(if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, Beta, ElemC)
+                        fun(ElemA, ElemB) ->
+                            spawn(numerl, dgemm, [if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, Beta, ElemC])
                         end, RowA, RowB)
                 end, B, RowC) 
         end, A,C).

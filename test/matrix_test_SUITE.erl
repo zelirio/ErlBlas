@@ -7,7 +7,7 @@
 check_matrix(M1, M2) -> 
     lists:zipwith(fun(Row1, Row2) -> lists:zipwith(fun(Elem1, Elem2) -> ?assert(numerl:equals(Elem1, Elem2)) end, Row1, Row2) end, M1, M2).
 
-base_test() -> 
+base_test() ->
     M = [[1]],
     Num = numerl:matrix(M),
     Block = block_mat:matrix(M),
