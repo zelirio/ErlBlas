@@ -491,7 +491,7 @@ transpose(M) ->
 
 % Takes a matrix in numerlplus format and return the same matrix in erlang format (list of lists of numbers)
 toErl(M) ->
-    appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfl(Elem) end, Row)) end,M)).
+    appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfli(Elem) end, Row)) end,M)).
 
 % Returns true if the elements of the two matrix given (in numerlplus format) are all the same, false otherwise.
 equals(M1, M2) ->
@@ -594,16 +594,79 @@ dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
     true ->
         B = tr(M2)
     end,
-    lists:zipwith(
+    if Beta /= 1.0 ->
+        dscal(Beta, C);
+        true -> skip
+    end,
+    erlang:display({"entered in erlang dgemm"}),
+    erlang:display({"A = ", toErl(A)}),
+    erlang:display({" B = ", toErl(B)}),
+    erlang:display({" C = ", toErl(C)}),
+    PID = self(),
+    PIDs = lists:zipwith(
+        fun(RowA, RowC) -> 
+            lists:zipwith(
+                fun(RowB, ElemC) -> 
+                    spawn(fun() -> lists:zipwith(
+                        fun(ElemA, ElemB) ->
+                            numerl:dgemm(if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, 1.0, ElemC),
+                            erlang:display({"new elem : ", numerl:mtfl(ElemC), " new C :", toErl(C)})
+                        end, RowA, RowB), PID ! {finished, self()} end)
+                end, B, RowC) 
+        end, A,C),
+
+    lists:map(fun(Row) -> 
+                lists:map(fun (Elem) ->
+                            receive
+                                {finished, Elem} ->
+                                    ok
+                            end
+                        end, Row)
+                end, PIDs).
+
+dgemm_refugee2(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
+    if ATransp ->
+        A = tr(M1);
+    true ->
+        A = M1
+    end,
+    if BTransp ->
+        B = M2;
+    true ->
+        B = tr(M2)
+    end,
+    PID = self(),
+    PIDs = lists:zipwith(
         fun(RowA, RowC) -> 
             lists:zipwith(
                 fun(RowB, ElemC) -> 
                     lists:zipwith(
                         fun(ElemA, ElemB) ->
-                            spawn(numerl, dgemm, [if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, Beta, ElemC])
+                            spawn(fun() -> 
+                                    numerl:dgemm(if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, Beta, ElemC), 
+                                    PID ! {finished, self()}
+                                end)
                         end, RowA, RowB)
                 end, B, RowC) 
-        end, A,C).
+        end, A,C),
+
+    lists:map(fun(Row) -> 
+                lists:map(fun(Elem) ->
+                            lists:map(fun(Part) ->
+                                receive
+                                    {finished, Part} -> ok
+                                end
+                            end, Elem)
+                        end, Row)
+                end, PIDs).
+
+%receive_X(0) -> ok;
+
+%receive_X(X) ->
+%    receive 
+%        finished ->
+%            receive_X(X-1)
+%    end.
 
 daxpy(Alpha, X, Y) ->
     element_wise_op(fun (A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).

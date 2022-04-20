@@ -1,6 +1,6 @@
--module(add_conc_test_SUITE).
+-module(add_conc_test_SUIT).
 -include_lib("stdlib/include/assert.hrl").
--include_lib("eunit/include/eunit.hrl").
+%-include_lib("eunit/include/eunit.hrl").
 
 base_test() ->
     A = [[1]],

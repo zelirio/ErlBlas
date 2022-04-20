@@ -80,3 +80,7 @@
 
 12/04 - B:
     dgemm en place concurrent, chaque appel à numerl:dgemm (un par elem de C) dans un process different, un test ok.
+
+19/04 - B:
+    gros tests pour dgemm; globalement OK mais gros avec les toutes petites matrices : il update bien le binaire mais pas la matrice globale (??!!)
+    exemple : toErl(C) = [[ [[1]] ]]; dgemm([1],[2],C); toErl(C[1,1]) = [[3]]; toErl(C) =[[ [[1]] ]] (??!!)
