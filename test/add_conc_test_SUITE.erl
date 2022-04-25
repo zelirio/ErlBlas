@@ -97,3 +97,80 @@ random_rectangle_test() ->
     Expected = numerl:mtfl(Conf),
     Actual = block_mat:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
+
+performance_test_() ->
+    {timeout, 100, fun() ->  performance(), performance_conc() end}.
+
+performance_conc()->
+    timer:sleep(100),
+    Sizes = [2,4,8,16,32,64,128,256,512,800],
+    Results = lists:map(fun(Size) ->
+                Times=add_conc_exec_time(5,Size),
+                stats(Times)
+            end,Sizes), 
+    erlang:display({conc, Results}).
+
+add_conc_exec_time(1,Size) ->
+    M1 = utils:generateRandMat(Size,Size),
+    M2 = utils:generateRandMat(Size,Size),
+    Mat1 = block_mat:matrix(M1),
+    Mat2 = block_mat:matrix(M2),
+    {Time,_} = timer:tc(block_mat,add_conc,[Mat1,Mat2]),
+    [Time];
+
+add_conc_exec_time(N,Size) ->
+    M1 = utils:generateRandMat(Size,Size),
+    M2 = utils:generateRandMat(Size,Size),
+    Mat1 = block_mat:matrix(M1),
+    Mat2 = block_mat:matrix(M2),
+    {Time,_} = timer:tc(block_mat,add_conc,[Mat1,Mat2]),
+    [Time| add_exec_time(N-1, Size)].
+
+performance()->
+    timer:sleep(100),
+    Sizes = [2,4,8,16,32,64,128,256,512,800],
+    Results = lists:map(fun(Size) ->
+                Times=add_exec_time(5,Size),
+                stats(Times)
+            end,Sizes), 
+    erlang:display({seq, Results}).
+
+add_exec_time(1,Size) ->
+    M1 = utils:generateRandMat(Size,Size),
+    M2 = utils:generateRandMat(Size,Size),
+    Mat1 = block_mat:matrix(M1),
+    Mat2 = block_mat:matrix(M2),
+    {Time,_} = timer:tc(block_mat,add,[Mat1,Mat2]),
+    [Time];
+
+add_exec_time(N,Size) ->
+    M1 = utils:generateRandMat(Size,Size),
+    M2 = utils:generateRandMat(Size,Size),
+    Mat1 = block_mat:matrix(M1),
+    Mat2 = block_mat:matrix(M2),
+    {Time,_} = timer:tc(block_mat,add,[Mat1,Mat2]),
+    [Time| add_exec_time(N-1, Size)].
+
+stats(List) ->
+    case List of
+        [X] -> {X,0};
+        _ -> 
+            {mean(List),var(List,mean(List))}
+    end.
+
+mean(List) ->
+    %erlang:display(List),
+    lineSum(List)/length(List).
+
+var(List,Mean) ->
+    lineSum(lists:map(fun(Elem)-> (Elem-Mean)*(Elem-Mean) end,List))/length(List).
+
+lineSum([H|T]) ->
+        lineSum(T, H).
+    
+lineSum(List, Acc) ->
+        case List of [H|T] ->
+            lineSum(T, Acc + H);
+        [] ->
+            Acc
+        end.

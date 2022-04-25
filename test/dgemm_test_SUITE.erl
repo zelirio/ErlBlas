@@ -14,9 +14,9 @@ square_matrix_test_core() ->
     run_x_times(square_matrix_test_transpose_and_scale, 10).
 
 square_matrix_test_basic() ->
-    A = generateRandMat(100,100),
-    B = generateRandMat(100,100),
-    C = generateRandMat(100,100),
+    A = generateRandMat(10000,1000),
+    B = generateRandMat(1000,1000),
+    C = generateRandMat(10000,1000),
     ANumerl = block_mat:matrix(A),
     BNumerl = block_mat:matrix(B),
     CNumerl = block_mat:matrix(C),
