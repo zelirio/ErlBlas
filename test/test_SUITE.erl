@@ -1,6 +1,6 @@
--module(test_SUIT).
+-module(test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
-%-include_lib("eunit/include/eunit.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 tr_testi() ->
     Mat1 = block_mat:matrix(generateRandMat(7,8)),

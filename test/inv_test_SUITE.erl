@@ -1,6 +1,6 @@
--module(inv_test_SUIT).
+-module(inv_test_SUITE).
 -include_lib("stdlib/include/assert.hrl").
-%-include_lib("eunit/include/eunit.hrl").
+-include_lib("eunit/include/eunit.hrl").
 
 base_test() -> 
     M = [[1]],

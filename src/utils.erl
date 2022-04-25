@@ -127,3 +127,18 @@ lineSum(List, Acc) ->
         Acc
     end.
 
+lineSum_conc([H|T]) ->
+        lineSum(T, H).
+    
+lineSum_conc(List, Acc) ->
+    PID = self(),
+        case List of [H|T] ->
+            Pid = spawn(fun() -> Result = lineSum_conc(T, numerl:add(Acc, H)), PID ! {Result, self()} end);
+        [] ->
+            Pid = spawn(fun()-> PID ! {Acc,self()} end)
+        end,
+        receive
+            {Return, Pid} ->
+                Return
+    end.
+

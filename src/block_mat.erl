@@ -5,8 +5,9 @@
 -on_load(benchmark/0).
 -import(utils,[split4/1, recompose4/4, appendEach/2, appendEachList/1, appendList/1, generateRandMat/2, splitLine/4, split4/3, element_wise_op/3, display_mat/1, lineSum/1, element_wise_op_conc/3]).
 
--export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, toErl/1, equals/2, first_try_benchmark/0, test_time/2,matrix_conc/1,zeros_conc/2, dgemm/7, daxpy/3, dscal/2]).
--export([matrix_conc/4,zeros_conc/3,tr/1, transpose/1, add_conc/2]).
+-export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, toErl/1, equals/2, first_try_benchmark/0, test_time/2]).
+-export([matrix_conc/1,zeros_conc/2, add_conc/2, mult_conc/2, dgemm/7, daxpy/3, dscal/2]).
+-export([matrix_conc/4,zeros_conc/3,tr/1, transpose/1]).
 
 -type matrix() :: [[number(), ...], ...].
 
@@ -447,6 +448,18 @@ multT(M1, M2) ->
         || Cj <- M2]
         || Li <- M1].
 
+mult_conc(M1,M2) ->
+    multT_conc(M1,tr(M2)).
+
+multT_conc(M1, M2) ->
+    PID = self(),
+        PIDs = [[spawn(fun() -> Result = utils:lineSum(lists:zipwith(fun(A, B) ->
+            numerl:dot(A, B) end, Li, Cj)), PID ! {Result, self()} end)
+            || Cj <- M2]
+        || Li <- M1],
+        
+    lists:map(fun(Row) -> lists:map(fun(Elem) -> receive {Res, Elem} -> Res end end,Row) end, PIDs).
+
 tr(M) ->
     tr(M, []).
 
@@ -491,7 +504,7 @@ transpose(M) ->
 
 % Takes a matrix in numerlplus format and return the same matrix in erlang format (list of lists of numbers)
 toErl(M) ->
-    appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfli(Elem) end, Row)) end,M)).
+    appendList(lists:map(fun(Row) -> appendEachList(lists:map(fun(Elem)-> numerl:mtfl(Elem) end, Row)) end,M)).
 
 % Returns true if the elements of the two matrix given (in numerlplus format) are all the same, false otherwise.
 equals(M1, M2) ->
@@ -598,10 +611,7 @@ dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
         dscal(Beta, C);
         true -> skip
     end,
-    erlang:display({"entered in erlang dgemm"}),
-    erlang:display({"A = ", toErl(A)}),
-    erlang:display({" B = ", toErl(B)}),
-    erlang:display({" C = ", toErl(C)}),
+    %erlang:display({"entered in erlang dgemm"}),
     PID = self(),
     PIDs = lists:zipwith(
         fun(RowA, RowC) -> 
@@ -609,8 +619,7 @@ dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
                 fun(RowB, ElemC) -> 
                     spawn(fun() -> lists:zipwith(
                         fun(ElemA, ElemB) ->
-                            numerl:dgemm(if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, 1.0, ElemC),
-                            erlang:display({"new elem : ", numerl:mtfl(ElemC), " new C :", toErl(C)})
+                            numerl:dgemm(if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, 1.0, ElemC)
                         end, RowA, RowB), PID ! {finished, self()} end)
                 end, B, RowC) 
         end, A,C),
