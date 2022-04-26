@@ -9,14 +9,14 @@ square_matrix_test_() ->
     {timeout, 30, fun() ->  square_matrix_test_core() end}.
 
 square_matrix_test_core() ->
-    run_x_times(square_matrix_test_basic, 10),
-    run_x_times(square_matrix_test_transpose, 10),
-    run_x_times(square_matrix_test_transpose_and_scale, 10).
+    run_x_times(square_matrix_test_basic, 2),
+    run_x_times(square_matrix_test_transpose, 2),
+    run_x_times(square_matrix_test_transpose_and_scale, 2).
 
 square_matrix_test_basic() ->
-    A = generateRandMat(10000,1000),
-    B = generateRandMat(1000,1000),
-    C = generateRandMat(10000,1000),
+    A = generateRandMat(50,50),
+    B = generateRandMat(50,50),
+    C = generateRandMat(50,50),
     ANumerl = block_mat:matrix(A),
     BNumerl = block_mat:matrix(B),
     CNumerl = block_mat:matrix(C),
@@ -24,25 +24,25 @@ square_matrix_test_basic() ->
     ?assert('=='(block_mat:toErl(CNumerl), eval([A,'*',B,'+',C]))).
 
 square_matrix_test_transpose() ->
-    A = generateRandMat(100,100),
-    B = generateRandMat(100,100),
-    C = generateRandMat(100,100),
+    A = generateRandMat(50,50),
+    B = generateRandMat(50,50),
+    C = generateRandMat(50,50),
     ANumerl = block_mat:matrix(A),
     BNumerl = block_mat:matrix(B),
     CNumerl = block_mat:matrix(C),
     block_mat:dgemm(true,false,1,ANumerl,BNumerl,1,CNumerl),
     ?assert('=='(block_mat:toErl(CNumerl), eval([tr(A),'*',B,'+',C]))),
-    A2 = generateRandMat(100,100),
-    B2 = generateRandMat(100,100),
-    C2 = generateRandMat(100,100),
+    A2 = generateRandMat(50,50),
+    B2 = generateRandMat(50,50),
+    C2 = generateRandMat(50,50),
     ANumerl2 = block_mat:matrix(A2),
     BNumerl2 = block_mat:matrix(B2),
     CNumerl2 = block_mat:matrix(C2),
     block_mat:dgemm(false,true,1,ANumerl2,BNumerl2,1,CNumerl2),
     ?assert('=='(block_mat:toErl(CNumerl2), eval([A2,'*',tr(B2),'+',C2]))),
-    A3 = generateRandMat(100,100),
-    B3 = generateRandMat(100,100),
-    C3 = generateRandMat(100,100),
+    A3 = generateRandMat(50,50),
+    B3 = generateRandMat(50,50),
+    C3 = generateRandMat(50,50),
     ANumerl3 = block_mat:matrix(A3),
     BNumerl3 = block_mat:matrix(B3),
     CNumerl3 = block_mat:matrix(C3),
@@ -50,18 +50,18 @@ square_matrix_test_transpose() ->
     ?assert('=='(block_mat:toErl(CNumerl3), eval([tr(A3),'*',tr(B3),'+',C3]))).
 
 square_matrix_test_transpose_and_scale() ->
-    A = generateRandMat(100,100),
-    B = generateRandMat(100,100),
-    C = generateRandMat(100,100),
+    A = generateRandMat(50,50),
+    B = generateRandMat(50,50),
+    C = generateRandMat(50,50),
     ANumerl = block_mat:matrix(A),
     BNumerl = block_mat:matrix(B),
     CNumerl = block_mat:matrix(C),
     Num1 = rand:uniform(10)/9,
     block_mat:dgemm(true,false,Num1,ANumerl,BNumerl,1,CNumerl),
     ?assert('=='(block_mat:toErl(CNumerl), eval([Num1,'*',tr(A),'*',B,'+',C]))),
-    A2 = generateRandMat(100,100),
-    B2 = generateRandMat(100,100),
-    C2 = generateRandMat(100,100),
+    A2 = generateRandMat(50,50),
+    B2 = generateRandMat(50,50),
+    C2 = generateRandMat(50,50),
     ANumerl2 = block_mat:matrix(A2),
     BNumerl2 = block_mat:matrix(B2),
     CNumerl2 = block_mat:matrix(C2),
@@ -73,9 +73,9 @@ square_matrix_test_transpose_and_scale() ->
     AB = '*'(Afois, tr(B2)),
     Result = '+'(AB, Cfois),
     ?assert('=='(block_mat:toErl(CNumerl2), Result)),
-    A3 = generateRandMat(100,100),
-    B3 = generateRandMat(100,100),
-    C3 = generateRandMat(100,100),
+    A3 = generateRandMat(50,50),
+    B3 = generateRandMat(50,50),
+    C3 = generateRandMat(50,50),
     ANumerl3 = block_mat:matrix(A3),
     BNumerl3 = block_mat:matrix(B3),
     CNumerl3 = block_mat:matrix(C3),
@@ -90,35 +90,35 @@ rectangular_matrix_test_() ->
     {timeout, 30, fun() ->  rectangular_matrix_test_core() end}.
 
 rectangular_matrix_test_core() ->
-    run_x_times(rectangular_matrix_test_basic, 10),
-    run_x_times(rectangular_matrix_test_transpose, 10),
-    run_x_times(rectangular_matrix_test_transpose_and_scale, 10).
+    run_x_times(rectangular_matrix_test_basic, 5),
+    run_x_times(rectangular_matrix_test_transpose, 5),
+    run_x_times(rectangular_matrix_test_transpose_and_scale, 5).
 
 rectangular_matrix_test_basic() ->
-    K = rand:uniform(100),
-    M = rand:uniform(100),
-    N = rand:uniform(100),
+    K = rand:uniform(50),
+    M = rand:uniform(50),
+    N = rand:uniform(50),
     A = generateRandMat(K,M),
     B = generateRandMat(M,N),
     C = generateRandMat(K,N),
     ANumerl = block_mat:matrix(A),
     BNumerl = block_mat:matrix(B),
     CNumerl = block_mat:matrix(C),
-    block_mat:dgemm(false,false,1,ANumerl,BNumerl,1,CNumerl).
-    %?assert('=='(block_mat:toErl(CNumerl), eval([A,'*',B,'+',C]))).
+    block_mat:dgemm(false,false,1,ANumerl,BNumerl,1,CNumerl),
+    ?assert('=='(block_mat:toErl(CNumerl), eval([A,'*',B,'+',C]))).
 
 rectangular_matrix_test_transpose() ->
-    K = rand:uniform(100),
-    M = rand:uniform(100),
-    N = rand:uniform(100),
-    A = generateRandMat(4,7),
-    B = generateRandMat(4,7),
-    C = generateRandMat(7,7),
+    K = rand:uniform(50),
+    M = rand:uniform(50),
+    N = rand:uniform(50),
+    A = generateRandMat(M,K),
+    B = generateRandMat(M,N),
+    C = generateRandMat(K,N),
     ANumerl = block_mat:matrix(A),
     BNumerl = block_mat:matrix(B),
     CNumerl = block_mat:matrix(C),
     block_mat:dgemm(true,false,1,ANumerl,BNumerl,1,CNumerl),
-    %?assert('=='(block_mat:toErl(CNumerl), eval([tr(A),'*',B,'+',C]))),
+    ?assert('=='(block_mat:toErl(CNumerl), eval([tr(A),'*',B,'+',C]))),
     A2 = generateRandMat(K,M),
     B2 = generateRandMat(N,M),
     C2 = generateRandMat(K,N),
@@ -126,20 +126,20 @@ rectangular_matrix_test_transpose() ->
     BNumerl2 = block_mat:matrix(B2),
     CNumerl2 = block_mat:matrix(C2),
     block_mat:dgemm(false,true,1,ANumerl2,BNumerl2,1,CNumerl2),
-    %?assert('=='(block_mat:toErl(CNumerl2), eval([A2,'*',tr(B2),'+',C2]))),
+    ?assert('=='(block_mat:toErl(CNumerl2), eval([A2,'*',tr(B2),'+',C2]))),
     A3 = generateRandMat(M,K),
     B3 = generateRandMat(N,M),
     C3 = generateRandMat(K,N),
     ANumerl3 = block_mat:matrix(A3),
     BNumerl3 = block_mat:matrix(B3),
     CNumerl3 = block_mat:matrix(C3),
-    block_mat:dgemm(true,true,1,ANumerl3,BNumerl3,1,CNumerl3).
-    %?assert('=='(block_mat:toErl(CNumerl3), eval([tr(A3),'*',tr(B3),'+',C3]))).
+    block_mat:dgemm(true,true,1,ANumerl3,BNumerl3,1,CNumerl3),
+    ?assert('=='(block_mat:toErl(CNumerl3), eval([tr(A3),'*',tr(B3),'+',C3]))).
 
 rectangular_matrix_test_transpose_and_scale() ->
-    K = rand:uniform(100),
-    M = rand:uniform(100),
-    N = rand:uniform(100),
+    K = rand:uniform(50),
+    M = rand:uniform(50),
+    N = rand:uniform(50),
     A = generateRandMat(M,K),
     B = generateRandMat(M,N),
     C = generateRandMat(K,N),
@@ -148,7 +148,7 @@ rectangular_matrix_test_transpose_and_scale() ->
     CNumerl = block_mat:matrix(C),
     Num1 = rand:uniform(10)/9,
     block_mat:dgemm(true,false,Num1,ANumerl,BNumerl,1,CNumerl),
-    %?assert('=='(block_mat:toErl(CNumerl), eval([Num1,'*',tr(A),'*',B,'+',C]))),
+    ?assert('=='(block_mat:toErl(CNumerl), eval([Num1,'*',tr(A),'*',B,'+',C]))),
     A2 = generateRandMat(K,M),
     B2 = generateRandMat(N,M),
     C2 = generateRandMat(K,N),
@@ -162,7 +162,7 @@ rectangular_matrix_test_transpose_and_scale() ->
     Cfois = '*'(Num3, C2),
     AB = '*'(Afois, tr(B2)),
     Result = '+'(AB, Cfois),
-    %?assert('=='(block_mat:toErl(CNumerl2), Result)),
+    ?assert('=='(block_mat:toErl(CNumerl2), Result)),
     A3 = generateRandMat(M,K),
     B3 = generateRandMat(N,M),
     C3 = generateRandMat(K,N),
@@ -173,8 +173,8 @@ rectangular_matrix_test_transpose_and_scale() ->
     Cfois2 = '*'(Num4, C3),
     AB2 = '*'(tr(A3), tr(B3)),
     Result2 = '+'(AB2, Cfois2),
-    block_mat:dgemm(true,true,1,ANumerl3,BNumerl3,Num4,CNumerl3).
-    %?assert('=='(block_mat:toErl(CNumerl3), Result2)).
+    block_mat:dgemm(true,true,1,ANumerl3,BNumerl3,Num4,CNumerl3),
+    ?assert('=='(block_mat:toErl(CNumerl3), Result2)).
     
 run_x_times(_, 0) ->
     ok;

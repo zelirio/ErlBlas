@@ -103,7 +103,7 @@ performance_test_() ->
 
 performance_conc()->
     timer:sleep(100),
-    Sizes = [2,4,8,16,32,64,128,256,512,800],
+    Sizes = [2,4,8,16,32,64,128],
     Results = lists:map(fun(Size) ->
                 Times=add_conc_exec_time(5,Size),
                 stats(Times)
@@ -128,7 +128,7 @@ add_conc_exec_time(N,Size) ->
 
 performance()->
     timer:sleep(100),
-    Sizes = [2,4,8,16,32,64,128,256,512,800],
+    Sizes = [2,4,8,16,32,64,128],
     Results = lists:map(fun(Size) ->
                 Times=add_exec_time(5,Size),
                 stats(Times)

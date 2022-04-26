@@ -431,13 +431,13 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
 add(M1, M2) ->
     element_wise_op(fun numerl:add/2, M1, M2).   
 
-%add_conc(M1, M2) ->
-%    utils:element_wise_add_conc(M1, M2).  
+add_conc(M1, M2) ->
+    utils:element_wise_op_conc(fun numerl:add/2,M1, M2).  
 
-add_conc(M1,M2) ->
-    ParentPID = self(),
-    PidMat = lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1, E2) -> spawn(fun() ->  ParentPID ! {numerl:add(E1,E2), self()} end) end, L1, L2) end, M1, M2),
-    lists:map(fun(Row) -> lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, Row) end, PidMat).
+%add_conc(M1,M2) ->
+%    ParentPID = self(),
+%    PidMat = lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1, E2) -> spawn(fun() ->  ParentPID ! {numerl:add(E1,E2), self()} end) end, L1, L2) end, M1, M2),
+%    lists:map(fun(Row) -> lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, Row) end, PidMat).
 
 % Returns the result of the substraction of the two matrices in argument, in numerlplus format
 sub(M1, M2) ->
@@ -521,7 +521,7 @@ equals(M1, M2) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 benchmark() ->
-    put(max_length,100).
+    put(max_length,5).
 
 first_try_benchmark() ->
     First_max = lists:min([round_one_benchmark(5) || _ <-lists:seq(1,5)]),
