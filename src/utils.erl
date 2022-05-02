@@ -1,6 +1,6 @@
 -module(utils).
 -export([generateRandMat/2, append/1, appendEach/1, appendEach/2, appendEachList/1, appendList/1, splitLine/3, split4/1, recompose4/4, recompose4/1, split4/3, splitLine/4, element_wise_op/3, display_mat/1, lineSum/1]).
--export([element_wise_op_conc/3, sendResult/4, element_wise_add_conc/2]).
+-export([element_wise_op_conc/3, sendResult/4, element_wise_add_conc/2, range2d/3]).
 
 generateRandMat(0,_) ->
     [];
@@ -146,4 +146,10 @@ lineSum_conc(List, Acc) ->
             {Return, Pid} ->
                 Return
     end.
+
+range2d(1, M, I) ->
+    [lists:seq(I,I+M-1)];
+
+range2d(N, M, I) ->
+    [lists:seq(I,I+M-1)|range2d(N-1, M, I+M)].
 

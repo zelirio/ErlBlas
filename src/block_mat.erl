@@ -431,13 +431,21 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
 add(M1, M2) ->
     element_wise_op(fun numerl:add/2, M1, M2).   
 
-add_conc(M1, M2) ->
-    utils:element_wise_op_conc(fun numerl:add/2,M1, M2).  
+%add_conc(M1, M2) ->
+%    utils:element_wise_op_conc(fun numerl:add/2,M1, M2).  
 
-%add_conc(M1,M2) ->
-%    ParentPID = self(),
-%    PidMat = lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1, E2) -> spawn(fun() ->  ParentPID ! {numerl:add(E1,E2), self()} end) end, L1, L2) end, M1, M2),
-%    lists:map(fun(Row) -> lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, Row) end, PidMat).
+add_conc(M1,M2) ->
+    ParentPID = self(),
+    NbrCores = erlang:system_info(logical_processors_available),
+    Servers = computation_server:start_servers(NbrCores, []),
+    N = length(M1),
+    M = length(lists:nth(1, M1)),
+    X = utils:range2d(N, M, 0),
+    PidMat = lists:zipwith3(fun(L1, L2, L3) -> lists:zipwith3(fun(E1, E2, I) -> Pid=lists:nth((I rem NbrCores) + 1, Servers), Pid ! {self(), fun() -> mat:'+'(E1,E2) end}, Pid  end, L1, L2, L3) end, M1, M2, X),
+    Res = lists:map(fun(Row) -> lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, Row) end, PidMat),
+    computation_server:stop_servers(Servers),
+    Res.
+
 
 % Returns the result of the substraction of the two matrices in argument, in numerlplus format
 sub(M1, M2) ->
@@ -521,7 +529,7 @@ equals(M1, M2) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 benchmark() ->
-    put(max_length,5).
+    put(max_length, 50).
 
 first_try_benchmark() ->
     First_max = lists:min([round_one_benchmark(5) || _ <-lists:seq(1,5)]),
