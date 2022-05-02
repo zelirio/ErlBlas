@@ -7,7 +7,7 @@
 
 -export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, toErl/1, equals/2, first_try_benchmark/0, test_time/2]).
 -export([matrix_conc/1,zeros_conc/2, add_conc/2, mult_conc/2, dgemm/7, daxpy/3, dscal/2]).
--export([matrix_conc/4,zeros_conc/3,tr/1, transpose/1]).
+-export([matrix_conc/4,zeros_conc/3,tr/1, transpose/1, multicore_test/0, dgemm_conc/7, get_max_length/0]).
 
 -type matrix() :: [[number(), ...], ...].
 
@@ -432,7 +432,7 @@ add(M1, M2) ->
     element_wise_op(fun numerl:add/2, M1, M2).   
 
 add_conc(M1, M2) ->
-    utils:element_wise_op_conc(fun numerl:add/2,M1, M2).  
+    utils:element_wise_op_conc2(fun numerl:add/2,M1, M2).  
 
 %add_conc(M1,M2) ->
 %    ParentPID = self(),
@@ -520,8 +520,11 @@ equals(M1, M2) ->
 %%% BENCHMARK %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+get_max_length() ->
+    get(max_length).
+
 benchmark() ->
-    put(max_length,5).
+    put(max_length,50).
 
 first_try_benchmark() ->
     First_max = lists:min([round_one_benchmark(5) || _ <-lists:seq(1,5)]),
@@ -575,33 +578,79 @@ test_time(N,true) ->
 %%% BLAS INTERFACE %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-dgemm_refugee(ATransp, BTransp, Alpha, Beta, M1, M2, M3) ->
-    case {ATransp, float(Alpha)} of
-        {false, 1.0} ->
-            A = M1;
-        {true, 1.0} ->
-            A = transpose(M1);
-
-        {false, Alpha} ->
-            A = scal(Alpha,M1);
-        {true, Alpha} ->
-            A = scal(Alpha,transpose(M1))
-    end,
-    case BTransp of
-        false ->
-            B = M2;
-        true ->
-            B = transpose(M2)
-    end,
-    case float(Beta) of
-        1.0 ->
-            C = M3;
-        Beta ->
-            C = scal(Beta,M3)
-    end,
-    add(mult(A,B),C).
-
 dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
+    if ATransp ->
+        A = tr(M1);
+    true ->
+        A = M1
+    end,
+    if BTransp ->
+        B = M2;
+    true ->
+        B = tr(M2)
+    end,
+    if Beta /= 1.0 ->
+        dscal(Beta, C);
+        true -> skip
+    end,
+    %erlang:display({"entered in erlang dgemm"}),
+    lists:zipwith(
+        fun(RowA, RowC) -> 
+            lists:zipwith(
+                fun(RowB, ElemC) -> 
+                    lists:zipwith(
+                        fun(ElemA, ElemB) -> %{Time, _} = timer:tc(numerl, dgemm, [if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, 1.0, ElemC]),
+                            numerl:dgemm(if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, 1.0, ElemC)
+                            %erlang:display({Time,erlang:system_info(scheduler_id)})
+                        end, RowA, RowB)
+                end, B, RowC)
+        end, A,C).
+
+dgemm_conc(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
+    if ATransp ->
+        A = tr(M1);
+    true ->
+        A = M1
+    end,
+    if BTransp ->
+        B = M2;
+    true ->
+        B = tr(M2)
+    end,
+    if Beta /= 1.0 ->
+        dscal(Beta, C);
+        true -> skip
+    end,
+    %erlang:display({"entered in erlang dgemm"}),
+    PID = self(),
+    PIDs = lists:zipwith(
+        fun(RowA, RowC) -> 
+            spawn(fun () ->
+            ParentPID = self(),
+            PidList = lists:zipwith(
+                fun(RowB, ElemC) -> 
+                    spawn(fun() -> lists:zipwith(
+                        fun(ElemA, ElemB) -> %{Time, _} = timer:tc(numerl, dgemm, [if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, 1.0, ElemC]),
+                            numerl:dgemm(if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, 1.0, ElemC)
+                            %erlang:display({Time,erlang:system_info(scheduler_id)})
+                        end, RowA, RowB), ParentPID ! {finished, self()} end)
+            end, B, RowC), lists:map(fun (Elem) ->
+                receive
+                    {finished, Elem} ->
+                        ok
+                end
+            end, PidList), PID ! {finished, self()} end)
+        end, A,C),
+
+    lists:map(fun (Elem) ->
+                            receive
+                                {finished, Elem} ->
+                                    ok
+                            end
+                        end, PIDs).
+
+
+dgemm_refugee(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
     if ATransp ->
         A = tr(M1);
     true ->
@@ -638,52 +687,17 @@ dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
                         end, Row)
                 end, PIDs).
 
-dgemm_refugee2(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
-    if ATransp ->
-        A = tr(M1);
-    true ->
-        A = M1
-    end,
-    if BTransp ->
-        B = M2;
-    true ->
-        B = tr(M2)
-    end,
-    PID = self(),
-    PIDs = lists:zipwith(
-        fun(RowA, RowC) -> 
-            lists:zipwith(
-                fun(RowB, ElemC) -> 
-                    lists:zipwith(
-                        fun(ElemA, ElemB) ->
-                            spawn(fun() -> 
-                                    numerl:dgemm(if ATransp -> 1; true -> 0 end, if BTransp -> 1; true -> 0 end, Alpha, ElemA, ElemB, Beta, ElemC), 
-                                    PID ! {finished, self()}
-                                end)
-                        end, RowA, RowB)
-                end, B, RowC) 
-        end, A,C),
-
-    lists:map(fun(Row) -> 
-                lists:map(fun(Elem) ->
-                            lists:map(fun(Part) ->
-                                receive
-                                    {finished, Part} -> ok
-                                end
-                            end, Elem)
-                        end, Row)
-                end, PIDs).
-
-%receive_X(0) -> ok;
-
-%receive_X(X) ->
-%    receive 
-%        finished ->
-%            receive_X(X-1)
-%    end.
-
 daxpy(Alpha, X, Y) ->
     element_wise_op(fun (A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
 
 dscal(Alpha, X) ->
     lists:map(fun(Row) -> lists:map(fun(A) -> numerl:dscal(Alpha, A) end, Row) end, X).
+
+multicore_test() ->
+    M1 = utils:generateRandMat(1000,100),
+    M2 = utils:generateRandMat(1000,100),
+    %Mat1 = numerl:matrix(M1),
+    %Mat2 = numerl:matrix(M2),
+    TwoPids = [spawn(fun() -> erlang:display({first_instr, self()}), mat:'+'(M1,M2), erlang:display({last_instr, self()})end)
+              ,spawn(fun() -> erlang:display({first_instr, self()}), mat:'+'(M1,M2), erlang:display({last_instr, self()})end)],
+    erlang:display(TwoPids).

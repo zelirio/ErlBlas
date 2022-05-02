@@ -1,6 +1,6 @@
 -module(utils).
 -export([generateRandMat/2, append/1, appendEach/1, appendEach/2, appendEachList/1, appendList/1, splitLine/3, split4/1, recompose4/4, recompose4/1, split4/3, splitLine/4, element_wise_op/3, display_mat/1, lineSum/1]).
--export([element_wise_op_conc/3, sendResult/4, element_wise_add_conc/2]).
+-export([element_wise_op_conc/3, sendResult/4, element_wise_add_conc/2, element_wise_op_conc2/3]).
 
 generateRandMat(0,_) ->
     [];
@@ -108,11 +108,25 @@ display_mat(M) ->
 
 
 element_wise_op(Op, M1, M2) ->
-    lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1,E2) -> Op(E1,E2) end, L1, L2) end, M1, M2).
+    lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1,E2) -> Op(E1,E2)  end, L1, L2) end, M1, M2).
+
+element_wise_op2(Op, M1, M2) ->
+    lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1,E2) -> {Time, Value} = timer:tc(Op,[E1,E2]), erlang:display(Time), Value  end, L1, L2) end, M1, M2).
 
 element_wise_op_conc(Op, M1, M2) ->
     PidMat = lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1, E2) -> spawn(utils, sendResult, [Op, E1, E2, self()]) end, L1, L2) end, M1, M2),
+    erlang:display(PidMat),
     lists:map(fun(Row) -> lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, Row) end, PidMat).
+
+element_wise_op_conc2(Op, M1, M2) ->
+    ParentPID = self(),
+    PidList = lists:zipwith(fun(Row1, Row2) -> spawn(fun() ->  Result = lists:zipwith(fun(Elem1, Elem2) -> 
+        ParPID = self(),
+        Pidipid = spawn(fun() -> Res = Op(Elem1,Elem2), ParPID ! {Res, self()} end),
+        receive {Res, Pidipid} -> Res end
+        end,Row1,Row2), ParentPID ! {Result, self()} end) end,M1,M2),
+    %erlang:display(PidList),
+    lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, PidList).
 
 element_wise_add_conc(M1, M2) ->
     ParentPID = self(),
@@ -120,7 +134,10 @@ element_wise_add_conc(M1, M2) ->
     lists:map(fun(Row) -> lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, Row) end, PidMat).
 
 sendResult(Op, Elem1,Elem2, ParentPID) -> 
-    ParentPID ! {Op(Elem1, Elem2), self()}.
+    erlang:display({mdr, self()}),
+    {Time, Value} = timer:tc(Op,[Elem1,Elem2]),
+    erlang:display(Time),
+    ParentPID ! {Value, self()}.
 
 lineSum([H|T]) ->
     lineSum(T, H).
