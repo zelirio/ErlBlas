@@ -625,7 +625,7 @@ set_max_length(N) ->
     put(max_length, N).
 
 benchmark() ->
-    put(max_length, 50).
+    put(max_length, 64).
 
 first_try_benchmark() ->
     First_max = lists:min([round_one_benchmark(5) || _ <- lists:seq(1, 5)]),
@@ -653,6 +653,7 @@ round_two_benchmark(N) ->
 
 test_time(N, true) ->
     timer:sleep(100),
+    erlang:display(hello),
     M = generateRandMat(N, N),
     Mat = numerl:matrix(M),
     TimesValues = [timer:tc(numerl, dot, [Mat, Mat]) || _ <- lists:seq(1, 50)],
@@ -668,11 +669,13 @@ test_time(N, true) ->
 test_time(N, false) ->
     M = generateRandMat(N, N),
     Mat = numerl:matrix(M),
-    {Time, _} = timer:tc(numerl, dot, [Mat, Mat]),
+    C = numerl:zeros(N, N),
+    {Time, _} = timer:tc(numerl, dgemm, [1, 1, 2.5, Mat, Mat, 3.5, C]),
     if Time < 1000 ->
+           erlang:display({ok, N, Time}),
            true;
        true ->
-           %erlang:display({foire, N, Time}),
+           erlang:display({foire, N, Time}),
            false
     end.
 
