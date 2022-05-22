@@ -475,10 +475,10 @@ matrix_conc(Mat, N, M, {Pid, ID}) ->
     end.
 
 copy(M) ->
-    lists:map(fun(Row) -> lists:map(fun(A) -> numerl:copy(A) end, Row) end, M).
+    utils:matrix_operation(fun numerl:copy/1, M).
 
 copy_shape(M) ->
-    lists:map(fun(Row) -> lists:map(fun(A) -> numerl:copy_shape(A) end, Row) end, M).
+    utils:matrix_operation(fun numerl:copy_shape/1, M).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% NUMERIC OPERATIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -576,7 +576,9 @@ tr([[H | T] | Rows], Col, Cols) ->
 
 % Returns the result of the multiplication of the matrix M by the scalar Const
 scal(Const, M) ->
-    lists:map(fun(Row) -> lists:map(fun(Elem) -> numerl:mult(Elem, Const) end, Row) end, M).
+    R = copy(M),
+    dscal(Const, R),
+    R.
 
 % Returns the inverse of the matrix given, in numerlplus format
 inv(M1) ->
@@ -600,7 +602,7 @@ inv(M1) ->
 % Returns the transpose of the matrix given, in numerlplus format
 transpose(M) ->
     Tr = tr(M),
-    lists:map(fun(Row) -> lists:map(fun(Elem) -> numerl:transpose(Elem) end, Row) end, Tr).
+    utils:matrix_operation(fun numerl:transpose/1, Tr).
 
 % Takes a matrix in numerlplus format and return the same matrix in erlang format (list of lists of numbers)
 toErl(M) ->
@@ -672,10 +674,10 @@ test_time(N, false) ->
     C = numerl:zeros(N, N),
     {Time, _} = timer:tc(numerl, dgemm, [1, 1, 2.5, Mat, Mat, 3.5, C]),
     if Time < 1000 ->
-           erlang:display({ok, N, Time}),
+           %erlang:display({ok, N, Time}),
            true;
        true ->
-           erlang:display({foire, N, Time}),
+           %erlang:display({foire, N, Time}),
            false
     end.
 
@@ -805,4 +807,4 @@ daxpy_conc(Alpha, X, Y) ->
     utils:element_wise_op_conc2(fun(A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
 
 dscal(Alpha, X) ->
-    lists:map(fun(Row) -> lists:map(fun(A) -> numerl:dscal(Alpha, A) end, Row) end, X).
+    utils:matrix_operation(fun(A) -> numerl:dscal(Alpha, A) end, X).

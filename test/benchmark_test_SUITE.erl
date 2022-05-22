@@ -9,7 +9,9 @@ benchmark_test() ->
         block_mat:get_max_length()).
 
 max_test() ->
-    run2(64, 200).
+    ok.
+
+    %run2(64, 200).
 
 run(81) ->
     ok;

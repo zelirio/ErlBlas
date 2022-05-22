@@ -16,7 +16,7 @@ performance_test_() ->
 performance_conc() ->
     timer:sleep(100),
     %dgemm_conc_exec_time(10,100),
-    Sizes = [2000],
+    Sizes = [500],
     Results =
         lists:map(fun(Size) ->
                      Times = dgemm_conc_exec_time(10, Size),
@@ -42,7 +42,7 @@ dgemm_conc_exec_time(N, Size) ->
 performance() ->
     timer:sleep(100),
     %dgemm_exec_time(10,100),
-    Sizes = [2000],
+    Sizes = [500],
     Results =
         lists:map(fun(Size) ->
                      Times = dgemm_exec_time(10, Size),
