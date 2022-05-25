@@ -627,7 +627,7 @@ set_max_length(N) ->
     put(max_length, N).
 
 benchmark() ->
-    put(max_length, 500).
+    put(max_length, 50).
 
 first_try_benchmark() ->
     First_max = lists:min([round_one_benchmark(5) || _ <- lists:seq(1, 5)]),

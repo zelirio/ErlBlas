@@ -99,19 +99,24 @@ random_rectangle_test() ->
 
 performance_test_() ->
     {timeout,
-    500,
+    1000,
      fun() ->
-        performance(),
-        performance_conc()
-     end}.
+        MaxLengths = [5,10,50,100,200,500],
+        lists:map(fun(MaxLength) -> 
+                    block_mat:set_max_length(MaxLength), 
+                    erlang:display({max_length, block_mat:get_max_length()}),
+                    performance(),
+                    performance_conc()
+                end, MaxLengths)
+    end}.
 
 performance_conc() ->
     timer:sleep(100),
     %add_conc_exec_time(10,100),
-    Sizes = [2000],
+    Sizes = [10,50,100,500],%,1000,2000],
     Results =
         lists:map(fun(Size) ->
-                     Times = add_conc_exec_time(10, Size),
+                     Times = add_conc_exec_time(40, Size),
                      stats(Times)
                   end,
                   Sizes),
@@ -132,10 +137,10 @@ add_conc_exec_time(N, Size) ->
 performance() ->
     timer:sleep(100),
     %add_exec_time(10,100),
-    Sizes = [2000],
+    Sizes = [10,50,100,500],%,1000,2000],
     Results =
         lists:map(fun(Size) ->
-                     Times = add_exec_time(10, Size),
+                     Times = add_exec_time(40, Size),
                      stats(Times)
                   end,
                   Sizes),
