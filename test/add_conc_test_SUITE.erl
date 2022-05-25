@@ -99,7 +99,7 @@ random_rectangle_test() ->
 
 performance_test_() ->
     {timeout,
-     100,
+    500,
      fun() ->
         performance(),
         performance_conc()
@@ -108,7 +108,7 @@ performance_test_() ->
 performance_conc() ->
     timer:sleep(100),
     %add_conc_exec_time(10,100),
-    Sizes = [500],
+    Sizes = [2000],
     Results =
         lists:map(fun(Size) ->
                      Times = add_conc_exec_time(10, Size),
@@ -132,7 +132,7 @@ add_conc_exec_time(N, Size) ->
 performance() ->
     timer:sleep(100),
     %add_exec_time(10,100),
-    Sizes = [500],
+    Sizes = [2000],
     Results =
         lists:map(fun(Size) ->
                      Times = add_exec_time(10, Size),

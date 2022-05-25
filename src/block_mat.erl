@@ -625,7 +625,7 @@ set_max_length(N) ->
     put(max_length, N).
 
 benchmark() ->
-    put(max_length, 64).
+    put(max_length, 500).
 
 first_try_benchmark() ->
     First_max = lists:min([round_one_benchmark(5) || _ <- lists:seq(1, 5)]),
@@ -802,7 +802,7 @@ daxpy(Alpha, X, Y) ->
     element_wise_op(fun(A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
 
 daxpy_conc(Alpha, X, Y) ->
-    utils:element_wise_op_conc2(fun(A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
+    utils:element_wise_op_conc3(fun(A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
 
 dscal(Alpha, X) ->
     lists:map(fun(Row) -> lists:map(fun(A) -> numerl:dscal(Alpha, A) end, Row) end, X).

@@ -4,7 +4,7 @@
          appendList/1, splitLine/3, split4/1, recompose4/4, recompose4/1, split4/3, splitLine/4,
          element_wise_op/3, display_mat/1, lineSum/1]).
 -export([element_wise_op_conc/3, sendResult/4, element_wise_add_conc/2,
-         element_wise_op_conc2/3]).
+         element_wise_op_conc2/3, element_wise_op_conc3/3]).
 
 generateRandMat(0, _) ->
     [];
@@ -193,6 +193,20 @@ element_wise_op_conc2(Op, M1, M2) ->
                  end
               end,
               PidList).
+
+element_wise_op_conc3(Op, M1, M2) ->
+                ParentPID = self(),
+                PidMat =
+            lists:zipwith(fun(L1, L2) -> spawn(fun() -> Result = lists:zipwith(fun(E1, E2) -> Op(E1, E2) end,L1,L2), ParentPID ! {Result, self()} end) end,
+                                  M1,
+                                  M2),
+                lists:map(fun(LinePid) ->
+                            receive 
+                                {Result, LinePid} ->
+                                    Result
+                            end 
+                          end,
+                          PidMat).
 
 element_wise_add_conc(M1, M2) ->
     ParentPID = self(),
