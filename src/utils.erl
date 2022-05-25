@@ -4,7 +4,7 @@
          appendList/1, splitLine/3, split4/1, recompose4/4, recompose4/1, split4/3, splitLine/4,
          element_wise_op/3, display_mat/1, lineSum/1]).
 -export([element_wise_op_conc/3, sendResult/4, element_wise_add_conc/2,
-         element_wise_op_conc2/3, element_wise_op_conc3/3]).
+         element_wise_op_conc2/3, element_wise_op_conc3/3,  matrix_operation/2]).
 
 generateRandMat(0, _) ->
     [];
@@ -235,6 +235,9 @@ element_wise_add_conc(M1, M2) ->
 sendResult(Op, Elem1, Elem2, ParentPID) ->
     Value = Op(Elem1, Elem2),
     ParentPID ! {Value, self()}.
+
+matrix_operation(Op, M) ->
+    lists:map(fun(Row) -> lists:map(fun(A) -> Op(A) end, Row) end, M).
 
 lineSum([H | T]) ->
     lineSum(T, H).
