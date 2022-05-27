@@ -1,4 +1,4 @@
--module(block_mat).
+-module(erlBlas).
 
 -compile({no_auto_import, [get/1, put/2]}).
 
@@ -21,13 +21,9 @@
          element_wise_op_conc/3]).
 
 -export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, toErl/1, equals/2,
-         first_try_benchmark/0, test_time/2, set_max_length/1]).
--export([matrix_conc/1, zeros_conc/2, add_conc/2, mult_conc/2, dgemm/7, daxpy/3,
-         dscal/2]).
--export([matrix_conc/4, zeros_conc/3, tr/1, transpose/1, dgemm_conc/7, get_max_length/0,
-         add_conc2/2, add2/2, sub_conc/2, mult_conc2/2]).
-
--type matrix() :: [[number(), ...], ...].
+         first_try_benchmark/0, test_time/2, set_max_length/1, copy/1, copy_shape/1]).
+-export([dgemm/7, daxpy/3, dscal/2]).
+-export([tr/1, transpose/1, get_max_length/0, get_shape/1]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% MATRIX GENERATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,362 +199,64 @@ matrix(Mat, N, M) ->
            end
     end.
 
-% Same result as zeros(Mat) function, but each block is created in its own process
-zeros_conc(N, M) ->
-    zeros_conc(N, M, {self(), res}),
-    receive
-        {res, Result} ->
-            Result
-    end.
-
-zeros_conc(N, M, {Pid, ID}) ->
-    MAX_LENGTH = get(max_length),
-
-    if N =< MAX_LENGTH, M =< MAX_LENGTH ->
-           Result = [[numerl:zeros(N, M)]],
-           Pid ! {ID, Result};
-       N =< MAX_LENGTH, M > MAX_LENGTH ->
-           RestM = M rem MAX_LENGTH,
-           DivM = M div MAX_LENGTH,
-           if RestM == 0 ->
-                  Append = spawn(utils, appendEach, [{self(), result}]),
-                  spawn(block_mat, zeros_conc, [N, MAX_LENGTH, {Append, a}]),
-                  spawn(block_mat, zeros_conc, [N, (DivM - 1) * MAX_LENGTH, {Append, b}]),
-                  receive
-                      {result, Result} ->
-                          Pid ! {ID, Result}
-                  end;
-              true ->
-                  Append = spawn(utils, appendEach, [{self(), result}]),
-                  spawn(block_mat, zeros_conc, [N, RestM, {Append, a}]),
-                  spawn(block_mat, zeros_conc, [N, DivM * MAX_LENGTH, {Append, b}]),
-                  receive
-                      {result, Result} ->
-                          Pid ! {ID, Result}
-                  end
-           end;
-       N > MAX_LENGTH, M =< MAX_LENGTH ->
-           RestN = N rem MAX_LENGTH,
-           DivN = N div MAX_LENGTH,
-           if RestN == 0 ->
-                  Append = spawn(utils, append, [{self(), result}]),
-                  spawn(block_mat, zeros_conc, [MAX_LENGTH, M, {Append, a}]),
-                  spawn(block_mat, zeros_conc, [(DivN - 1) * MAX_LENGTH, M, {Append, b}]),
-                  receive
-                      {result, Result} ->
-                          Pid ! {ID, Result}
-                  end;
-              true ->
-                  Append = spawn(utils, append, [{self(), result}]),
-                  spawn(block_mat, zeros_conc, [RestN, M, {Append, a}]),
-                  spawn(block_mat, zeros_conc, [DivN * MAX_LENGTH, M, {Append, b}]),
-                  receive
-                      {result, Result} ->
-                          Pid ! {ID, Result}
-                  end
-           end;
-       N > MAX_LENGTH, M > MAX_LENGTH ->
-           RestN = N rem MAX_LENGTH,
-           DivN = N div MAX_LENGTH,
-           RestM = M rem MAX_LENGTH,
-           DivM = M div MAX_LENGTH,
-
-           if RestM == 0 ->
-                  if RestN == 0 ->
-                         Recompose = spawn(utils, recompose4, [{self(), result}]),
-                         spawn(block_mat, zeros_conc, [MAX_LENGTH, MAX_LENGTH, {Recompose, a}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [MAX_LENGTH, (DivM - 1) * MAX_LENGTH, {Recompose, b}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [(DivN - 1) * MAX_LENGTH, MAX_LENGTH, {Recompose, c}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [(DivN - 1) * MAX_LENGTH, (DivM - 1) * MAX_LENGTH, {Recompose, d}]),
-                         receive
-                             {result, Result} ->
-                                 Pid ! {ID, Result}
-                         end;
-                     true ->
-                         Recompose = spawn(utils, recompose4, [{self(), result}]),
-                         spawn(block_mat, zeros_conc, [RestN, MAX_LENGTH, {Recompose, a}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [RestN, (DivM - 1) * MAX_LENGTH, {Recompose, b}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [DivN * MAX_LENGTH, MAX_LENGTH, {Recompose, c}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [DivN * MAX_LENGTH, (DivM - 1) * MAX_LENGTH, {Recompose, d}]),
-                         receive
-                             {result, Result} ->
-                                 Pid ! {ID, Result}
-                         end
-                  end;
-              true ->
-                  if RestN == 0 ->
-                         Recompose = spawn(utils, recompose4, [{self(), result}]),
-                         spawn(block_mat, zeros_conc, [MAX_LENGTH, RestM, {Recompose, a}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [MAX_LENGTH, DivM * MAX_LENGTH, {Recompose, b}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [(DivN - 1) * MAX_LENGTH, RestM, {Recompose, c}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [(DivN - 1) * MAX_LENGTH, DivM * MAX_LENGTH, {Recompose, d}]),
-                         receive
-                             {result, Result} ->
-                                 Pid ! {ID, Result}
-                         end;
-                     true ->
-                         Recompose = spawn(utils, recompose4, [{self(), result}]),
-                         spawn(block_mat, zeros_conc, [RestN, RestM, {Recompose, a}]),
-                         spawn(block_mat, zeros_conc, [RestN, DivM * MAX_LENGTH, {Recompose, b}]),
-                         spawn(block_mat, zeros_conc, [DivN * MAX_LENGTH, RestM, {Recompose, c}]),
-                         spawn(block_mat,
-                               zeros_conc,
-                               [DivN * MAX_LENGTH, DivM * MAX_LENGTH, {Recompose, d}]),
-                         receive
-                             {result, Result} ->
-                                 Pid ! {ID, Result}
-                         end
-                  end
-           end
-    end.
-
-% Same result as matrix(Mat) function, but each block is created in its own process
-matrix_conc(Mat) ->
-    N = length(Mat),
-    M = length(lists:nth(1, Mat)),
-    matrix_conc(Mat, N, M, {self(), res}),
-    receive
-        {res, Result} ->
-            Result
-    end.
-
-matrix_conc(Mat, N, M, {Pid, ID}) ->
-    MAX_LENGTH = get(max_length),
-
-    if N =< MAX_LENGTH, M =< MAX_LENGTH ->
-           Result = [[numerl:matrix(Mat)]],
-           Pid ! {ID, Result};
-       N =< MAX_LENGTH, M > MAX_LENGTH ->
-           RestM = M rem MAX_LENGTH,
-           DivM = M div MAX_LENGTH,
-           if RestM == 0 ->
-                  {L, R} = splitLine(Mat, [], [], MAX_LENGTH),
-                  Append = spawn(utils, appendEach, [{self(), result}]),
-                  spawn(block_mat, matrix_conc, [L, N, MAX_LENGTH, {Append, a}]),
-                  spawn(block_mat, matrix_conc, [R, N, (DivM - 1) * MAX_LENGTH, {Append, b}]),
-                  receive
-                      {result, Result} ->
-                          Pid ! {ID, Result}
-                  end;
-              true ->
-                  {L, R} = splitLine(Mat, [], [], RestM),
-                  Append = spawn(utils, appendEach, [{self(), result}]),
-                  spawn(block_mat, matrix_conc, [L, N, RestM, {Append, a}]),
-                  spawn(block_mat, matrix_conc, [R, N, DivM * MAX_LENGTH, {Append, b}]),
-                  receive
-                      {result, Result} ->
-                          Pid ! {ID, Result}
-                  end
-           end;
-       N > MAX_LENGTH, M =< MAX_LENGTH ->
-           RestN = N rem MAX_LENGTH,
-           DivN = N div MAX_LENGTH,
-           if RestN == 0 ->
-                  {M1, M2} = lists:split(MAX_LENGTH, Mat),
-                  Append = spawn(utils, append, [{self(), result}]),
-                  spawn(block_mat, matrix_conc, [M1, MAX_LENGTH, M, {Append, a}]),
-                  spawn(block_mat, matrix_conc, [M2, (DivN - 1) * MAX_LENGTH, M, {Append, b}]),
-                  receive
-                      {result, Result} ->
-                          Pid ! {ID, Result}
-                  end;
-              true ->
-                  {M1, M2} = lists:split(RestN, Mat),
-                  Append = spawn(utils, append, [{self(), result}]),
-                  spawn(block_mat, matrix_conc, [M1, RestN, M, {Append, a}]),
-                  spawn(block_mat, matrix_conc, [M2, DivN * MAX_LENGTH, M, {Append, b}]),
-                  receive
-                      {result, Result} ->
-                          Pid ! {ID, Result}
-                  end
-           end;
-       N > MAX_LENGTH, M > MAX_LENGTH ->
-           RestN = N rem MAX_LENGTH,
-           DivN = N div MAX_LENGTH,
-           RestM = M rem MAX_LENGTH,
-           DivM = M div MAX_LENGTH,
-
-           if RestM == 0 ->
-                  if RestN == 0 ->
-                         {A, B, C, D} = split4(Mat, MAX_LENGTH, MAX_LENGTH),
-                         Recompose = spawn(utils, recompose4, [{self(), result}]),
-                         spawn(block_mat, matrix_conc, [A, MAX_LENGTH, MAX_LENGTH, {Recompose, a}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [B, MAX_LENGTH, (DivM - 1) * MAX_LENGTH, {Recompose, b}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [C, (DivN - 1) * MAX_LENGTH, MAX_LENGTH, {Recompose, c}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [D,
-                                (DivN - 1) * MAX_LENGTH,
-                                (DivM - 1) * MAX_LENGTH,
-                                {Recompose, d}]),
-                         receive
-                             {result, Result} ->
-                                 Pid ! {ID, Result}
-                         end;
-                     true ->
-                         {A, B, C, D} = split4(Mat, RestN, MAX_LENGTH),
-                         Recompose = spawn(utils, recompose4, [{self(), result}]),
-                         spawn(block_mat, matrix_conc, [A, RestN, MAX_LENGTH, {Recompose, a}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [B, RestN, (DivM - 1) * MAX_LENGTH, {Recompose, b}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [C, DivN * MAX_LENGTH, MAX_LENGTH, {Recompose, c}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [D, DivN * MAX_LENGTH, (DivM - 1) * MAX_LENGTH, {Recompose, d}]),
-                         receive
-                             {result, Result} ->
-                                 Pid ! {ID, Result}
-                         end
-                  end;
-              true ->
-                  if RestN == 0 ->
-                         {A, B, C, D} = split4(Mat, MAX_LENGTH, RestM),
-                         Recompose = spawn(utils, recompose4, [{self(), result}]),
-                         spawn(block_mat, matrix_conc, [A, MAX_LENGTH, RestM, {Recompose, a}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [B, MAX_LENGTH, DivM * MAX_LENGTH, {Recompose, b}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [C, (DivN - 1) * MAX_LENGTH, RestM, {Recompose, c}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [D, (DivN - 1) * MAX_LENGTH, DivM * MAX_LENGTH, {Recompose, d}]),
-                         receive
-                             {result, Result} ->
-                                 Pid ! {ID, Result}
-                         end;
-                     true ->
-                         {A, B, C, D} = split4(Mat, RestN, RestM),
-                         Recompose = spawn(utils, recompose4, [{self(), result}]),
-                         spawn(block_mat, matrix_conc, [A, RestN, RestM, {Recompose, a}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [B, RestN, DivM * MAX_LENGTH, {Recompose, b}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [C, DivN * MAX_LENGTH, RestM, {Recompose, c}]),
-                         spawn(block_mat,
-                               matrix_conc,
-                               [D, DivN * MAX_LENGTH, DivM * MAX_LENGTH, {Recompose, d}]),
-                         receive
-                             {result, Result} ->
-                                 Pid ! {ID, Result}
-                         end
-                  end
-           end
-    end.
-
 copy(M) ->
     utils:matrix_operation(fun numerl:copy/1, M).
 
 copy_shape(M) ->
     utils:matrix_operation(fun numerl:copy_shape/1, M).
 
+get_shape(M) ->
+    H = get_height(M, 0),
+    W = get_width(lists:nth(1, M), 0),
+    {H, W}.
+
+get_height(M, N) ->
+    case M of
+        [] ->
+            N;
+        [H | T] ->
+            {L, _} =
+                numerl:get_shape(
+                    lists:nth(1, H)),
+            get_height(T, N + L);
+        _ ->
+            error("get_height: invalid matrix")
+    end.
+
+get_width(M, N) ->
+    case M of
+        [] ->
+            N;
+        [H | T] ->
+            {_, W} = numerl:get_shape(H),
+            get_width(T, N + W);
+        _ ->
+            error("get_width: invalid matrix")
+    end.
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% NUMERIC OPERATIONS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Returns the result of the addition of the two matrices in argument, in numerlplus format
--spec add(M1, M2) -> M3
-    when M1 :: matrix(),
-         M2 :: matrix(),
-         M3 :: matrix().
 add(M1, M2) ->
-    element_wise_op(fun numerl:add/2, M1, M2).
-
-add_conc(M1, M2) ->
-    utils:element_wise_op_conc2(fun numerl:add/2, M1, M2).
-
-add2(M1, M2) ->
     M3 = copy(M1),
     daxpy(1.0, M2, M3),
     M3.
 
-add_conc2(M1, M2) ->
-    M3 = copy(M1),
-    daxpy_conc(1.0, M2, M3),
-    M3.
-
-%add_conc(M1,M2) ->
-%    ParentPID = self(),
-%    PidMat = lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1, E2) -> spawn(fun() ->  ParentPID ! {numerl:add(E1,E2), self()} end) end, L1, L2) end, M1, M2),
-%    lists:map(fun(Row) -> lists:map(fun(Pid) -> receive {Result, Pid} -> Result end end, Row) end, PidMat).
-
 % Returns the result of the substraction of the two matrices in argument, in numerlplus format
 sub(M1, M2) ->
-    element_wise_op(fun numerl:sub/2, M1, M2).
-
-sub_conc(M1, M2) ->
     M3 = copy(M1),
-    daxpy_conc(-1.0, M2, M3),
+    daxpy(-1.0, M2, M3),
     M3.
 
 % Returns the result of the multiplication of the two matrices in argument, in numerlplus format
 mult(M1, M2) ->
-    multT(M1, tr(M2)).
-
-mult_conc2(M1, M2) ->
-    M3 = copy_shape(M1),
-    dgemm_conc(false, false, 1.0, M1, M2, 1.0, M3),
+    {R1, C1} = get_shape(M1),
+    {C1, C2} = get_shape(M2),
+    M3 = zeros(R1, C2),
+    dgemm(false, false, 1.0, M1, M2, 0.0, M3),
     M3.
-
-multT(M1, M2) ->
-    [[utils:lineSum(
-          lists:zipwith(fun(A, B) -> numerl:dot(A, B) end, Li, Cj))
-      || Cj <- M2]
-     || Li <- M1].
-
-mult_conc(M1, M2) ->
-    multT_conc(M1, tr(M2)).
-
-multT_conc(M1, M2) ->
-    PID = self(),
-    PIDs =
-        [[spawn(fun() ->
-                   Result =
-                       utils:lineSum(
-                           lists:zipwith(fun(A, B) -> numerl:dot(A, B) end, Li, Cj)),
-                   PID ! {Result, self()}
-                end)
-          || Cj <- M2]
-         || Li <- M1],
-
-    lists:map(fun(Row) ->
-                 lists:map(fun(Elem) ->
-                              receive
-                                  {Res, Elem} ->
-                                      Res
-                              end
-                           end,
-                           Row)
-              end,
-              PIDs).
 
 tr(M) ->
     tr(M, []).
@@ -670,9 +368,11 @@ test_time(N, true) ->
     end;
 test_time(N, false) ->
     M = generateRandMat(N, N),
+    M2 = generateRandMat(N, N),
     Mat = numerl:matrix(M),
+    Mat2 = numerl:matrix(M2),
     C = numerl:zeros(N, N),
-    {Time, _} = timer:tc(numerl, dgemm, [1, 1, 2.5, Mat, Mat, 3.5, C]),
+    {Time, _} = timer:tc(numerl, dgemm, [1, 1, 2.5, Mat, Mat2, 3.5, C]),
     if Time < 1000 ->
            %erlang:display({ok, N, Time}),
            true;
@@ -686,50 +386,6 @@ test_time(N, false) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
-    if ATransp ->
-           A = tr(M1);
-       true ->
-           A = M1
-    end,
-    if BTransp ->
-           B = M2;
-       true ->
-           B = tr(M2)
-    end,
-    if Beta /= 1.0 ->
-           dscal(Beta, C);
-       true ->
-           skip
-    end,
-    lists:zipwith(fun(RowA, RowC) ->
-                     lists:zipwith(fun(RowB, ElemC) ->
-                                      lists:zipwith(fun(ElemA, ElemB) ->
-                                                       numerl:dgemm(if ATransp ->
-                                                                           1;
-                                                                       true ->
-                                                                           0
-                                                                    end,
-                                                                    if BTransp ->
-                                                                           1;
-                                                                       true ->
-                                                                           0
-                                                                    end,
-                                                                    Alpha,
-                                                                    ElemA,
-                                                                    ElemB,
-                                                                    1.0,
-                                                                    ElemC)
-                                                    end,
-                                                    RowA,
-                                                    RowB)
-                                   end,
-                                   B,
-                                   RowC)
-                  end,
-                  A,
-                  C).
-
-dgemm_conc(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
     if ATransp ->
            A = tr(M1);
        true ->
@@ -801,9 +457,6 @@ dgemm_conc(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
               PIDs).
 
 daxpy(Alpha, X, Y) ->
-    element_wise_op(fun(A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
-
-daxpy_conc(Alpha, X, Y) ->
     utils:element_wise_op_conc3(fun(A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
 
 dscal(Alpha, X) ->

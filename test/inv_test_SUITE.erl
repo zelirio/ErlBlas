@@ -6,11 +6,11 @@
 base_test() ->
     M = [[1]],
     Num = numerl:matrix(M),
-    Block = block_mat:matrix(M),
+    Block = erlBlas:matrix(M),
     Res = numerl:inv(Num),
-    Inv = block_mat:inv(Block),
+    Inv = erlBlas:inv(Block),
     ErlRes = numerl:mtfl(Res),
-    ErlInv = block_mat:toErl(Inv),
+    ErlInv = erlBlas:toErl(Inv),
     ?assert(mat:'=='(ErlInv, ErlRes)).
 
 max_size_blocks_test() ->
@@ -27,9 +27,9 @@ max_size_blocks_test() ->
     Num = numerl:matrix(M),
     NumResult = numerl:inv(Num),
     ErlNum = numerl:mtfl(NumResult),
-    Block = block_mat:matrix(M),
-    BlockResult = block_mat:inv(Block),
-    ErlBlock = block_mat:toErl(BlockResult),
+    Block = erlBlas:matrix(M),
+    BlockResult = erlBlas:inv(Block),
+    ErlBlock = erlBlas:toErl(BlockResult),
     ?assert(mat:'=='(ErlBlock, ErlNum)).
 
 random_test() ->
@@ -38,7 +38,7 @@ random_test() ->
     Num = numerl:matrix(M),
     NumResult = numerl:inv(Num),
     ErlNum = numerl:mtfl(NumResult),
-    Block = block_mat:matrix(M),
-    BlockResult = block_mat:inv(Block),
-    ErlBlock = block_mat:toErl(BlockResult),
+    Block = erlBlas:matrix(M),
+    BlockResult = erlBlas:inv(Block),
+    ErlBlock = erlBlas:toErl(BlockResult),
     ?assert(mat:'=='(ErlBlock, ErlNum)).

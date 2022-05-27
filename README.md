@@ -1,4 +1,4 @@
-block_mat
+erlBlas
 =====
 
 An OTP library

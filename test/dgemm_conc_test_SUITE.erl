@@ -29,10 +29,10 @@ dgemm_conc_exec_time(N, Size) ->
     M1 = utils:generateRandMat(Size, Size),
     M2 = utils:generateRandMat(Size, Size),
     M3 = utils:generateRandMat(Size, Size),
-    Mat1 = block_mat:matrix(M1),
-    Mat2 = block_mat:matrix(M2),
-    Mat3 = block_mat:matrix(M3),
-    {Time, _} = timer:tc(block_mat, dgemm_conc, [false, false, 1.0, Mat1, Mat2, 1.0, Mat3]),
+    Mat1 = erlBlas:matrix(M1),
+    Mat2 = erlBlas:matrix(M2),
+    Mat3 = erlBlas:matrix(M3),
+    {Time, _} = timer:tc(erlBlas, dgemm, [false, false, 1.0, Mat1, Mat2, 1.0, Mat3]),
     if N == 1 ->
            [Time];
        true ->
@@ -55,10 +55,10 @@ dgemm_exec_time(N, Size) ->
     M1 = utils:generateRandMat(Size, Size),
     M2 = utils:generateRandMat(Size, Size),
     M3 = utils:generateRandMat(Size, Size),
-    Mat1 = block_mat:matrix(M1),
-    Mat2 = block_mat:matrix(M2),
-    Mat3 = block_mat:matrix(M3),
-    {Time, _} = timer:tc(block_mat, dgemm, [false, false, 1.0, Mat1, Mat2, 1.0, Mat3]),
+    Mat1 = erlBlas:matrix(M1),
+    Mat2 = erlBlas:matrix(M2),
+    Mat3 = erlBlas:matrix(M3),
+    {Time, _} = timer:tc(sequential, dgemm, [false, false, 1.0, Mat1, Mat2, 1.0, Mat3]),
     if N == 1 ->
            [Time];
        true ->
