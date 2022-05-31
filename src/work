@@ -32,7 +32,7 @@
             termes jamais ou très peu écrit, avec lecture en temps constant (et court).
         j'ai modifié les fonctions de génération pour prendre en compte la modification, et enlevé les guards de la fonction matrix puisqu'on ne peut
             pas faire d'appel à get(max_length) à l'intérieur.
-        pour le moment, la fonction "benchmark", lancéé au chargement du module block_mat, lie juste le term "max_length" à la valeur 5.
+        pour le moment, la fonction "benchmark", lancéé au chargement du module erlBlas, lie juste le term "max_length" à la valeur 5.
     bon, gros gros problèmes pour le benchmark : tape 250*250 en moins d'1ms 50 fois d'affilée, puis prend plus d'1ms pour faire une 50*50...
     okay, j'arrive à une solution satisfaisante malgré l'instabilité de ma VM : le benchmark est divisé en deux rounds : 
         Durant le premier, il multiplie la taille de la matrice par deux jusqu'à prendre plus d'1ms, et renvoie la valeur max qui a pris moins d'1ms.
@@ -61,7 +61,7 @@
     interface de dgemm exposée, fonctionne pour quelques tests simples avec chaque fois un paramètre qui change % à la multiplication.
 
 13/03 - L:
-    quelques test pour add et mult. Rajouter une fonction equals dans block_mat pour check que 2 matrice block sont egales.
+    quelques test pour add et mult. Rajouter une fonction equals dans erlBlas pour check que 2 matrice block sont egales.
     J'ai rajouter un fichier utils.erl pour mettre les fonctions qui n'ont pas forecment qcch a faire dans le main.
     j'ai du coup modif les fonctions actuelles pour utiliser utils et supprimer les fonctions du main fichier.
     testé et approuvé.
@@ -69,10 +69,10 @@
 27/03 - L:
     Fix un bug dans dgemm ou il faisait des scal inutile si on donnais 1 au lieu de 1.0.
     import des fonctions de utils pour plus de lisibilité dans le code.
-    daxpy en place rajouté dans numerl et block_mat.
+    daxpy en place rajouté dans numerl et erlBlas.
 
 02/04 - L:
-    Fonction dscal en place rajouté dans numerl et block_mat.
+    Fonction dscal en place rajouté dans numerl et erlBlas.
 
 08/04 - B&L:
     code plus propre

@@ -7,11 +7,11 @@ base_test() ->
     A = [[1]],
     B = [[1]],
     C = [[2]],
-    ABlock = block_mat:matrix(A),
-    BBlock = block_mat:matrix(B),
-    CBlock = block_mat:matrix(C),
-    Res = block_mat:add_conc(ABlock, BBlock),
-    ?assert(block_mat:equals(Res, CBlock)).
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    CBlock = erlBlas:matrix(C),
+    Res = erlBlas:add(ABlock, BBlock),
+    ?assert(erlBlas:equals(Res, CBlock)).
 
 max_size_blocks_test() ->
     A = [[1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
@@ -47,39 +47,39 @@ max_size_blocks_test() ->
          [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
          [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]],
 
-    ABlock = block_mat:matrix(A),
-    BBlock = block_mat:matrix(B),
-    CBlock = block_mat:matrix(C),
-    Res = block_mat:add_conc(ABlock, BBlock),
-    ?assert(block_mat:equals(Res, CBlock)).
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    CBlock = erlBlas:matrix(C),
+    Res = erlBlas:add(ABlock, BBlock),
+    ?assert(erlBlas:equals(Res, CBlock)).
 
 float_test() ->
     A = [[1.2, 2.5, 3.6, 4.7, 5.69, 42.69], [6.24, 7.77, 8.42, 9.58, 10.013, 69.42]],
 
     B = [[1.2, 2.5, 3.6, 4.7, 5.69, 42.69], [6.24, 7.77, 8.42, 9.58, 10.013, 69.42]],
 
-    ABlock = block_mat:matrix(A),
-    BBlock = block_mat:matrix(B),
-    Res = block_mat:add_conc(ABlock, BBlock),
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    Res = erlBlas:add(ABlock, BBlock),
     ANum = numerl:matrix(A),
     BNum = numerl:matrix(B),
     Conf = numerl:add(ANum, BNum),
     Expected = numerl:mtfl(Conf),
-    Actual = block_mat:toErl(Res),
+    Actual = erlBlas:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
 
 random_square_test() ->
     N = 13,
     A = utils:generateRandMat(N, N),
     B = utils:generateRandMat(N, N),
-    ABlock = block_mat:matrix(A),
-    BBlock = block_mat:matrix(B),
-    Res = block_mat:add_conc(ABlock, BBlock),
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    Res = erlBlas:add(ABlock, BBlock),
     ANum = numerl:matrix(A),
     BNum = numerl:matrix(B),
     Conf = numerl:add(ANum, BNum),
     Expected = numerl:mtfl(Conf),
-    Actual = block_mat:toErl(Res),
+    Actual = erlBlas:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
 
 random_rectangle_test() ->
@@ -87,33 +87,34 @@ random_rectangle_test() ->
     M = 7,
     A = utils:generateRandMat(N, M),
     B = utils:generateRandMat(N, M),
-    ABlock = block_mat:matrix(A),
-    BBlock = block_mat:matrix(B),
-    Res = block_mat:add_conc(ABlock, BBlock),
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    Res = erlBlas:add(ABlock, BBlock),
     ANum = numerl:matrix(A),
     BNum = numerl:matrix(B),
     Conf = numerl:add(ANum, BNum),
     Expected = numerl:mtfl(Conf),
-    Actual = block_mat:toErl(Res),
+    Actual = erlBlas:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
 
 performance_test_() ->
     {timeout,
-    1000,
+     1000,
      fun() ->
-        MaxLengths = [5,10,50,100,200,500],
-        lists:map(fun(MaxLength) -> 
-                    block_mat:set_max_length(MaxLength), 
-                    erlang:display({max_length, block_mat:get_max_length()}),
-                    performance(),
-                    performance_conc()
-                end, MaxLengths)
-    end}.
+        MaxLengths = [5, 10, 50, 100, 200, 500],
+        lists:map(fun(MaxLength) ->
+                     erlBlas:set_max_length(MaxLength),
+                     erlang:display({max_length, erlBlas:get_max_length()}),
+                     performance(),
+                     performance_conc()
+                  end,
+                  MaxLengths)
+     end}.
 
 performance_conc() ->
     timer:sleep(100),
-    %add_conc_exec_time(10,100),
-    Sizes = [10,50,100,500],%,1000,2000],
+    %add_exec_time(10,100),
+    Sizes = [10, 50, 100, 500],%,1000,2000],
     Results =
         lists:map(fun(Size) ->
                      Times = add_conc_exec_time(40, Size),
@@ -125,9 +126,9 @@ performance_conc() ->
 add_conc_exec_time(N, Size) ->
     M1 = utils:generateRandMat(Size, Size),
     M2 = utils:generateRandMat(Size, Size),
-    Mat1 = block_mat:matrix(M1),
-    Mat2 = block_mat:matrix(M2),
-    {Time, _} = timer:tc(block_mat, add_conc2, [Mat1, Mat2]),
+    Mat1 = erlBlas:matrix(M1),
+    Mat2 = erlBlas:matrix(M2),
+    {Time, _} = timer:tc(erlBlas, add, [Mat1, Mat2]),
     if N == 1 ->
            [Time];
        true ->
@@ -137,7 +138,7 @@ add_conc_exec_time(N, Size) ->
 performance() ->
     timer:sleep(100),
     %add_exec_time(10,100),
-    Sizes = [10,50,100,500],%,1000,2000],
+    Sizes = [10, 50, 100, 500],%,1000,2000],
     Results =
         lists:map(fun(Size) ->
                      Times = add_exec_time(40, Size),
@@ -149,9 +150,9 @@ performance() ->
 add_exec_time(N, Size) ->
     M1 = utils:generateRandMat(Size, Size),
     M2 = utils:generateRandMat(Size, Size),
-    Mat1 = block_mat:matrix(M1),
-    Mat2 = block_mat:matrix(M2),
-    {Time, _} = timer:tc(block_mat, add2, [Mat1, Mat2]),
+    Mat1 = erlBlas:matrix(M1),
+    Mat2 = erlBlas:matrix(M2),
+    {Time, _} = timer:tc(sequential, add, [Mat1, Mat2]),
     if N == 1 ->
            [Time];
        true ->
