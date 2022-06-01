@@ -33,24 +33,20 @@
 zeros(N, M) ->
     MAX_LENGTH = get(max_length),
 
-    RestN = N rem MAX_LENGTH,
-    DivN = N div MAX_LENGTH,
-    if RestN == 0 ->  
+    if N rem MAX_LENGTH == 0 ->  
         ModN = MAX_LENGTH,
-        RowMultiple = DivN-1;
+        RowMultiple = N div MAX_LENGTH - 1;
     true ->
-        ModN = RestN,
-        RowMultiple = DivN
+        ModN = N rem MAX_LENGTH,
+        RowMultiple = N div MAX_LENGTH
     end,
     
-    RestM = M rem MAX_LENGTH,
-    DivM = M div MAX_LENGTH,
-    if RestM == 0 ->  
+    if M rem MAX_LENGTH == 0 ->  
         ModM = MAX_LENGTH,
-        ColMultiple = DivM-1;
+        ColMultiple = M div MAX_LENGTH - 1;
     true ->
-        ModM = RestM,
-        ColMultiple = DivM
+        ModM = M rem MAX_LENGTH,
+        ColMultiple = M div MAX_LENGTH
     end,
 
 
@@ -77,14 +73,12 @@ zeros(N, M) ->
 eye(N) ->
     MAX_LENGTH = get(max_length),
     
-    RestN = N rem MAX_LENGTH,
-    DivN = N div MAX_LENGTH,
-    if RestN == 0 ->  
+    if N rem MAX_LENGTH == 0 ->  
         ModN = MAX_LENGTH,
-        RowMultiple = DivN-1;
+        RowMultiple = N div MAX_LENGTH - 1;
     true ->
-        ModN = RestN,
-        RowMultiple = DivN
+        ModN = N rem MAX_LENGTH,
+        RowMultiple = N div MAX_LENGTH
     end,
 
     if 
@@ -107,24 +101,20 @@ matrix(Mat) ->
 matrix(Mat, N, M) ->
     MAX_LENGTH = get(max_length),
 
-    RestN = N rem MAX_LENGTH,
-    DivN = N div MAX_LENGTH,
-    if RestN == 0 ->  
+    if N rem MAX_LENGTH == 0 ->  
         ModN = MAX_LENGTH,
-        RowMultiple = DivN-1;
+        RowMultiple = N div MAX_LENGTH - 1;
     true ->
-        ModN = RestN,
-        RowMultiple = DivN
+        ModN = N rem MAX_LENGTH,
+        RowMultiple = N div MAX_LENGTH
     end,
     
-    RestM = M rem MAX_LENGTH,
-    DivM = M div MAX_LENGTH,
-    if RestM == 0 ->  
+    if M rem MAX_LENGTH == 0 ->  
         ModM = MAX_LENGTH,
-        ColMultiple = DivM-1;
+        ColMultiple = M div MAX_LENGTH - 1;
     true ->
-        ModM = RestM,
-        ColMultiple = DivM
+        ModM = M rem MAX_LENGTH,
+        ColMultiple = M div MAX_LENGTH
     end,
 
     if  
