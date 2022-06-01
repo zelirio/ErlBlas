@@ -32,91 +32,70 @@
 % Creates a zero matrix of size (N x M)
 zeros(N, M) ->
     MAX_LENGTH = get(max_length),
+
     RestN = N rem MAX_LENGTH,
     DivN = N div MAX_LENGTH,
-
+    if RestN == 0 ->  
+        ModN = MAX_LENGTH,
+        RowMultiple = DivN-1;
+    true ->
+        ModN = RestN,
+        RowMultiple = DivN
+    end,
+    
     RestM = M rem MAX_LENGTH,
     DivM = M div MAX_LENGTH,
+    if RestM == 0 ->  
+        ModM = MAX_LENGTH,
+        ColMultiple = DivM-1;
+    true ->
+        ModM = RestM,
+        ColMultiple = DivM
+    end,
 
-    if N =< MAX_LENGTH ->
-           if M =< MAX_LENGTH ->
-                  [[numerl:zeros(N, M)]];
-              true ->
-                  if RestM == 0 ->
-                         A = zeros(N, MAX_LENGTH),
-                         B = zeros(N, (DivM - 1) * MAX_LENGTH),
-                         appendEach(A, B);
-                     true ->
-                         A = zeros(N, RestM),
-                         B = zeros(N, DivM * MAX_LENGTH),
-                         appendEach(A, B)
-                  end
-           end;
-       true ->
-           if M =< MAX_LENGTH ->
-                  if RestN == 0 ->
-                         A = zeros(MAX_LENGTH, M),
-                         B = zeros((DivN - 1) * MAX_LENGTH, M),
-                         lists:append(A, B);
-                     true ->
-                         A = zeros(RestN, M),
-                         B = zeros(DivN * MAX_LENGTH, M),
-                         lists:append(A, B)
-                  end;
-              true ->
-                  if RestM == 0 ->
-                         if RestN == 0 ->
-                                Mat1 = zeros(MAX_LENGTH, MAX_LENGTH),
-                                Mat2 = zeros(MAX_LENGTH, (DivM - 1) * MAX_LENGTH),
-                                Mat3 = zeros((DivN - 1) * MAX_LENGTH, MAX_LENGTH),
-                                Mat4 = zeros((DivN - 1) * MAX_LENGTH, (DivM - 1) * MAX_LENGTH),
-                                recompose4(Mat1, Mat2, Mat3, Mat4);
-                            true ->
-                                Mat1 = zeros(RestN, MAX_LENGTH),
-                                Mat2 = zeros(RestN, (DivM - 1) * MAX_LENGTH),
-                                Mat3 = zeros(DivN * MAX_LENGTH, MAX_LENGTH),
-                                Mat4 = zeros(DivN * MAX_LENGTH, (DivM - 1) * MAX_LENGTH),
-                                recompose4(Mat1, Mat2, Mat3, Mat4)
-                         end;
-                     true ->
-                         if RestN == 0 ->
-                                Mat1 = zeros(MAX_LENGTH, RestM),
-                                Mat2 = zeros(MAX_LENGTH, DivM * MAX_LENGTH),
-                                Mat3 = zeros((DivN - 1) * MAX_LENGTH, RestM),
-                                Mat4 = zeros((DivN - 1) * MAX_LENGTH, DivM * MAX_LENGTH),
-                                recompose4(Mat1, Mat2, Mat3, Mat4);
-                            true ->
-                                Mat1 = zeros(RestN, RestM),
-                                Mat2 = zeros(RestN, DivM * MAX_LENGTH),
-                                Mat3 = zeros(DivN * MAX_LENGTH, RestM),
-                                Mat4 = zeros(DivN * MAX_LENGTH, DivM * MAX_LENGTH),
-                                recompose4(Mat1, Mat2, Mat3, Mat4)
-                         end
-                  end
-           end
+
+    if  
+        N =< MAX_LENGTH, M =< MAX_LENGTH ->
+            [[numerl:zeros(N, M)]];
+        N =< MAX_LENGTH, M > MAX_LENGTH ->
+            A = zeros(N, ModM),
+            B = zeros(N, ColMultiple * MAX_LENGTH),
+            appendEach(A, B);
+        N > MAX_LENGTH, M =< MAX_LENGTH ->
+            A = zeros(ModN, M),
+            C = zeros(RowMultiple * MAX_LENGTH, M),
+            lists:append(A, C);
+        N > MAX_LENGTH, M > MAX_LENGTH ->
+            A = zeros(ModN, ModM),
+            B = zeros(ModN, ColMultiple * MAX_LENGTH),
+            C = zeros(RowMultiple * MAX_LENGTH, ModM),
+            D = zeros(RowMultiple* MAX_LENGTH, ColMultiple * MAX_LENGTH),
+            recompose4(A,B,C,D)
     end.
 
 % Returns an Identity matrix of size (N x N)
 eye(N) ->
     MAX_LENGTH = get(max_length),
+    
     RestN = N rem MAX_LENGTH,
     DivN = N div MAX_LENGTH,
-    if N =< MAX_LENGTH ->
-           [[numerl:eye(N)]];
-       true ->
-           if RestN == 0 ->
-                  Mat1 = eye(MAX_LENGTH),
-                  Mat2 = zeros(MAX_LENGTH, (DivN - 1) * MAX_LENGTH),
-                  Mat3 = zeros((DivN - 1) * MAX_LENGTH, MAX_LENGTH),
-                  Mat4 = eye((DivN - 1) * MAX_LENGTH),
-                  recompose4(Mat1, Mat2, Mat3, Mat4);
-              true ->
-                  Mat1 = eye(RestN),
-                  Mat2 = zeros(RestN, DivN * MAX_LENGTH),
-                  Mat3 = zeros(DivN * MAX_LENGTH, RestN),
-                  Mat4 = eye(DivN * MAX_LENGTH),
-                  recompose4(Mat1, Mat2, Mat3, Mat4)
-           end
+    if RestN == 0 ->  
+        ModN = MAX_LENGTH,
+        RowMultiple = DivN-1;
+    true ->
+        ModN = RestN,
+        RowMultiple = DivN
+    end,
+
+    if 
+        N =< MAX_LENGTH ->
+            [[numerl:eye(N)]];
+        N > MAX_LENGTH ->
+            A = eye(ModN),
+            B = zeros(ModN, RowMultiple * MAX_LENGTH),
+            C = zeros(RowMultiple * MAX_LENGTH, ModN),
+            D = eye(RowMultiple * MAX_LENGTH),
+            recompose4(A,B,C,D)
     end.
 
 % Take a numeric matrix in Erlang format (list of lists of numbers) and returns a matrix in numerlplus format (list of lists of numerl submatrices)
@@ -128,75 +107,46 @@ matrix(Mat) ->
 matrix(Mat, N, M) ->
     MAX_LENGTH = get(max_length),
 
-    if N =< MAX_LENGTH, M =< MAX_LENGTH ->
-           [[numerl:matrix(Mat)]];
-       N =< MAX_LENGTH, M > MAX_LENGTH ->
-           RestM = M rem MAX_LENGTH,
-           DivM = M div MAX_LENGTH,
-           if RestM == 0 ->
-                  {L, R} = splitLine(Mat, [], [], MAX_LENGTH),
-                  A = matrix(L, N, MAX_LENGTH),
-                  B = matrix(R, N, (DivM - 1) * MAX_LENGTH),
-                  appendEach(A, B);
-              true ->
-                  {L, R} = splitLine(Mat, [], [], RestM),
-                  A = matrix(L, N, RestM),
-                  B = matrix(R, N, DivM * MAX_LENGTH),
-                  appendEach(A, B)
-           end;
-       N > MAX_LENGTH, M =< MAX_LENGTH ->
-           RestN = N rem MAX_LENGTH,
-           DivN = N div MAX_LENGTH,
-           if RestN == 0 ->
-                  {M1, M2} = lists:split(MAX_LENGTH, Mat),
-                  A = matrix(M1, MAX_LENGTH, M),
-                  B = matrix(M2, (DivN - 1) * MAX_LENGTH, M),
-                  lists:append(A, B);
-              true ->
-                  {M1, M2} = lists:split(RestN, Mat),
-                  A = matrix(M1, RestN, M),
-                  B = matrix(M2, DivN * MAX_LENGTH, M),
-                  lists:append(A, B)
-           end;
-       N > MAX_LENGTH, M > MAX_LENGTH ->
-           RestN = N rem MAX_LENGTH,
-           DivN = N div MAX_LENGTH,
-           RestM = M rem MAX_LENGTH,
-           DivM = M div MAX_LENGTH,
+    RestN = N rem MAX_LENGTH,
+    DivN = N div MAX_LENGTH,
+    if RestN == 0 ->  
+        ModN = MAX_LENGTH,
+        RowMultiple = DivN-1;
+    true ->
+        ModN = RestN,
+        RowMultiple = DivN
+    end,
+    
+    RestM = M rem MAX_LENGTH,
+    DivM = M div MAX_LENGTH,
+    if RestM == 0 ->  
+        ModM = MAX_LENGTH,
+        ColMultiple = DivM-1;
+    true ->
+        ModM = RestM,
+        ColMultiple = DivM
+    end,
 
-           if RestM == 0 ->
-                  if RestN == 0 ->
-                         {A, B, C, D} = split4(Mat, MAX_LENGTH, MAX_LENGTH),
-                         Mat1 = matrix(A, MAX_LENGTH, MAX_LENGTH),
-                         Mat2 = matrix(B, MAX_LENGTH, (DivM - 1) * MAX_LENGTH),
-                         Mat3 = matrix(C, (DivN - 1) * MAX_LENGTH, MAX_LENGTH),
-                         Mat4 = matrix(D, (DivN - 1) * MAX_LENGTH, (DivM - 1) * MAX_LENGTH),
-                         recompose4(Mat1, Mat2, Mat3, Mat4);
-                     true ->
-                         {A, B, C, D} = split4(Mat, RestN, MAX_LENGTH),
-                         Mat1 = matrix(A, RestN, MAX_LENGTH),
-                         Mat2 = matrix(B, RestN, (DivM - 1) * MAX_LENGTH),
-                         Mat3 = matrix(C, DivN * MAX_LENGTH, MAX_LENGTH),
-                         Mat4 = matrix(D, DivN * MAX_LENGTH, (DivM - 1) * MAX_LENGTH),
-                         recompose4(Mat1, Mat2, Mat3, Mat4)
-                  end;
-              true ->
-                  if RestN == 0 ->
-                         {A, B, C, D} = split4(Mat, MAX_LENGTH, RestM),
-                         Mat1 = matrix(A, MAX_LENGTH, RestM),
-                         Mat2 = matrix(B, MAX_LENGTH, DivM * MAX_LENGTH),
-                         Mat3 = matrix(C, (DivN - 1) * MAX_LENGTH, RestM),
-                         Mat4 = matrix(D, (DivN - 1) * MAX_LENGTH, DivM * MAX_LENGTH),
-                         recompose4(Mat1, Mat2, Mat3, Mat4);
-                     true ->
-                         {A, B, C, D} = split4(Mat, RestN, RestM),
-                         Mat1 = matrix(A, RestN, RestM),
-                         Mat2 = matrix(B, RestN, DivM * MAX_LENGTH),
-                         Mat3 = matrix(C, DivN * MAX_LENGTH, RestM),
-                         Mat4 = matrix(D, DivN * MAX_LENGTH, DivM * MAX_LENGTH),
-                         recompose4(Mat1, Mat2, Mat3, Mat4)
-                  end
-           end
+    if  
+        N =< MAX_LENGTH, M =< MAX_LENGTH ->
+            [[numerl:matrix(Mat)]];
+        N =< MAX_LENGTH, M > MAX_LENGTH ->
+            {L, R} = splitLine(Mat, [], [], ModM),
+            A = matrix(L, N, ModM),
+            B = matrix(R, N, ColMultiple * MAX_LENGTH),
+            appendEach(A, B);
+        N > MAX_LENGTH, M =< MAX_LENGTH ->
+            {U, L} = lists:split(ModN, Mat),
+            A = matrix(U, ModN, M),
+            C = matrix(L, RowMultiple * MAX_LENGTH, M),
+            lists:append(A, C);
+        N > MAX_LENGTH, M > MAX_LENGTH ->
+            {UL,UR,LL,LR} = split4(Mat, ModN, ModM),
+            A = matrix(UL, ModN, ModM),
+            B = matrix(UR, ModN, ColMultiple * MAX_LENGTH),
+            C = matrix(LL, RowMultiple * MAX_LENGTH, ModM),
+            D = matrix(LR, RowMultiple * MAX_LENGTH, ColMultiple * MAX_LENGTH),
+            recompose4(A,B,C,D)
     end.
 
 copy(M) ->
