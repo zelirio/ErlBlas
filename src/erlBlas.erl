@@ -269,10 +269,8 @@ benchmark() ->
 
 first_try_benchmark() ->
     First_max = lists:min([round_one_benchmark(5) || _ <- lists:seq(1, 5)]),
-    %erlang:display({first_max, First_max}),
     Second_max =
         lists:nth(2, lists:sort([round_two_benchmark(First_max) || _ <- lists:seq(1, 20)])),
-    %erlang:display({second_max, Second_max}),
     put(max_length, Second_max).
 
 round_one_benchmark(N) ->
@@ -301,7 +299,6 @@ test_time(N, true) ->
     Test = lists:search(fun(Time) -> Time > 1000 end, Times),
     case Test of
         {value, _} ->
-            %erlang:display({N, Time}),
             false;
         _ ->
             true
@@ -314,10 +311,8 @@ test_time(N, false) ->
     C = numerl:zeros(N, N),
     {Time, _} = timer:tc(numerl, dgemm, [1, 1, 2.5, Mat, Mat2, 3.5, C]),
     if Time < 1000 ->
-           %erlang:display({ok, N, Time}),
            true;
        true ->
-           %erlang:display({foire, N, Time}),
            false
     end.
 
@@ -350,18 +345,8 @@ dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
                                       lists:zipwith(fun(RowB, ElemC) ->
                                                        spawn(fun() ->
                                                                 lists:zipwith(fun(ElemA, ElemB) ->
-                                                                                 numerl:dgemm(if
-                                                                                                  ATransp ->
-                                                                                                      1;
-                                                                                                  true ->
-                                                                                                      0
-                                                                                              end,
-                                                                                              if
-                                                                                                  BTransp ->
-                                                                                                      1;
-                                                                                                  true ->
-                                                                                                      0
-                                                                                              end,
+                                                                                 numerl:dgemm(if ATransp -> 1; true -> 0 end,
+                                                                                              if BTransp -> 1; true -> 0 end,
                                                                                               Alpha,
                                                                                               ElemA,
                                                                                               ElemB,

@@ -3,7 +3,7 @@
 -export([generateRandMat/2, append/1, appendEach/1, appendEach/2, appendEachList/1,
          appendList/1, splitLine/3, split4/1, recompose4/4, recompose4/1, split4/3, splitLine/4,
          element_wise_op/3, display_mat/1, lineSum/1]).
--export([element_wise_op_conc/3, sendResult/4, element_wise_add_conc/2,
+-export([element_wise_op_conc/3, sendResult/4, 
          element_wise_op_conc2/3, element_wise_op_conc3/3,  matrix_operation/2]).
 
 generateRandMat(0, _) ->
@@ -126,19 +126,6 @@ element_wise_op(Op, M1, M2) ->
                   M1,
                   M2).
 
-element_wise_op2(Op, M1, M2) ->
-    lists:zipwith(fun(L1, L2) ->
-                     lists:zipwith(fun(E1, E2) ->
-                                      {Time, Value} = timer:tc(Op, [E1, E2]),
-                                      erlang:display(Time),
-                                      Value
-                                   end,
-                                   L1,
-                                   L2)
-                  end,
-                  M1,
-                  M2).
-
 element_wise_op_conc(Op, M1, M2) ->
     PidMat =
         lists:zipwith(fun(L1, L2) ->
@@ -208,30 +195,6 @@ element_wise_op_conc3(Op, M1, M2) ->
                           end,
                           PidMat).
 
-element_wise_add_conc(M1, M2) ->
-    ParentPID = self(),
-    PidMat =
-        lists:zipwith(fun(L1, L2) ->
-                         lists:zipwith(fun(E1, E2) ->
-                                          spawn(fun() -> ParentPID ! {numerl:add(E1, E2), self()}
-                                                end)
-                                       end,
-                                       L1,
-                                       L2)
-                      end,
-                      M1,
-                      M2),
-    lists:map(fun(Row) ->
-                 lists:map(fun(Pid) ->
-                              receive
-                                  {Result, Pid} ->
-                                      Result
-                              end
-                           end,
-                           Row)
-              end,
-              PidMat).
-
 sendResult(Op, Elem1, Elem2, ParentPID) ->
     Value = Op(Elem1, Elem2),
     ParentPID ! {Value, self()}.
@@ -248,23 +211,4 @@ lineSum(List, Acc) ->
             lineSum(T, numerl:add(Acc, H));
         [] ->
             Acc
-    end.
-
-lineSum_conc([H | T]) ->
-    lineSum(T, H).
-
-lineSum_conc(List, Acc) ->
-    PID = self(),
-    case List of
-        [H | T] ->
-            Pid = spawn(fun() ->
-                           Result = lineSum_conc(T, numerl:add(Acc, H)),
-                           PID ! {Result, self()}
-                        end);
-        [] ->
-            Pid = spawn(fun() -> PID ! {Acc, self()} end)
-    end,
-    receive
-        {Return, Pid} ->
-            Return
     end.
