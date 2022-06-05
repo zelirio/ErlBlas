@@ -149,7 +149,6 @@ element_wise_op_conc2(Op, M1, M2) ->
         M1,
         M2
     ),
-    %erlang:display(PidList),
     lists:map(
         fun(Pid) ->
             receive

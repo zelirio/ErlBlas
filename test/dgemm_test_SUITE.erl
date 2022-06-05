@@ -6,9 +6,88 @@
 -import(mat, ['*'/2, '*´'/2, tr/1, '+'/2, '-'/2, '=='/2, eval/1]).
 -import(erlBlas, [dgemm/7]).
 
-%square_matrix_test_() ->
-%    erlBlas:set_max_length(50),
-%    {timeout, 30, fun() -> square_matrix_test_core() end}.
+base_test() ->
+    A = [[1]],
+    B = [[1]],
+    C = [[1]],
+    R = [[2]],
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    CBlock = erlBlas:matrix(C),
+    RBlock = erlBlas:matrix(R),
+    erlBlas:dgemm(false, true, 1.0, ABlock, BBlock, 1.0, CBlock),
+    ?assert(erlBlas:equals(RBlock, CBlock)).
+
+max_size_blocks_test() ->
+    A = [
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    ],
+
+    B = [
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20],
+        [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    ],
+
+    C = [
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
+        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100]
+    ],
+
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    CBlock = erlBlas:zeros(10, 10),
+    RBlock = erlBlas:matrix(C),
+    erlBlas:dgemm(false, false, 1, ABlock, BBlock, 0, CBlock),
+    ?assert(erlBlas:equals(RBlock, CBlock)).
+
+float_test() ->
+    A = [[-1.2, 2.5, 3.6, 4.7, 5.69, 42.69], [6.24, 7.77, 8.42, -9.58, 10.013, 69.42]],
+
+    B = [
+        [1.2, 2.5],
+        [3.6, 4.7],
+        [-5.69, 42.69],
+        [6.24, -7.77],
+        [8.42, 9.58],
+        [-10.013, 69.42]
+    ],
+
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    CBlock = erlBlas:zeros(2, 2),
+    erlBlas:dgemm(false, false, 1, ABlock, BBlock, 0, CBlock),
+    ANum = numerl:matrix(A),
+    BNum = numerl:matrix(B),
+    CNum = numerl:zeros(2, 2),
+    numerl:dgemm(0, 0, 1, ANum, BNum, 0, CNum),
+    Expected = numerl:mtfl(CNum),
+    Actual = erlBlas:toErl(CBlock),
+    ?assert(mat:'=='(Expected, Actual)).
 
 small_random_test() ->
     erlBlas:set_max_length(50),
