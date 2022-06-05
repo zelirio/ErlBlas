@@ -7,7 +7,7 @@ performance_test_() ->
     {timeout,
      1000,
      fun() ->
-        MaxLengths = [5, 10, 50, 100, 200, 500],
+        MaxLengths = [50],
         lists:map(fun(MaxLength) ->
                      erlBlas:set_max_length(MaxLength),
                      erlang:display({max_length, erlBlas:get_max_length()}),
@@ -20,7 +20,7 @@ performance_test_() ->
 performance_conc() ->
     timer:sleep(100),
     %mult_conc_exec_time(10,100),
-    Sizes = [10, 50, 100, 500],%,1000,2000],
+    Sizes = [10, 50, 100, 200, 350, 500],%,1000,2000],
     Results =
         lists:map(fun(Size) ->
                      Times = mult_conc_exec_time(10, Size),
@@ -44,7 +44,7 @@ mult_conc_exec_time(N, Size) ->
 performance() ->
     timer:sleep(100),
     %mult_exec_time(10,100),
-    Sizes = [10, 50, 100, 500],%,1000,2000],
+    Sizes = [10, 50, 100, 200, 350, 500],%,1000,2000],
     Results =
         lists:map(fun(Size) ->
                      Times = mult_exec_time(10, Size),

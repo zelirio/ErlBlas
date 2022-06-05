@@ -56,3 +56,39 @@ random_rectangle_test() ->
     Expected = numerl:mtfl(Conf),
     Actual = erlBlas:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
+
+corner_cases_test_() ->
+    erlBlas:set_max_length(50),
+    Sizes = [49, 50, 51, 99, 100, 101],
+    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+
+random_test() ->
+    erlBlas:set_max_length(50),
+    Sizes = [rand:uniform(800) + 500, rand:uniform(800) + 500, rand:uniform(800) + 500],
+    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+
+matrix_test_core(Sizes) ->
+    lists:map(
+        fun(M) ->
+            lists:map(
+                fun(N) ->
+                    random_test_core(M, N)
+                end,
+                Sizes
+            )
+        end,
+        Sizes
+    ).
+
+random_test_core(M, N) ->
+    A = utils:generateRandMat(M, N),
+    B = utils:generateRandMat(M, N),
+    ABlock = erlBlas:matrix(A),
+    BBlock = erlBlas:matrix(B),
+    Res = erlBlas:sub(ABlock, BBlock),
+    ANum = numerl:matrix(A),
+    BNum = numerl:matrix(B),
+    Conf = numerl:sub(ANum, BNum),
+    Expected = numerl:mtfl(Conf),
+    Actual = erlBlas:toErl(Res),
+    ?assert(mat:'=='(Expected, Actual)).

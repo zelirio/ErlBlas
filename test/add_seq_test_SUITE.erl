@@ -1,4 +1,4 @@
--module(mult_test_SUITE).
+-module(add_seq_test_SUITE).
 
 -include_lib("stdlib/include/assert.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -6,11 +6,11 @@
 base_test() ->
     A = [[1]],
     B = [[1]],
-    C = [[1]],
+    C = [[2]],
     ABlock = erlBlas:matrix(A),
     BBlock = erlBlas:matrix(B),
     CBlock = erlBlas:matrix(C),
-    Res = erlBlas:mult(ABlock, BBlock),
+    Res = sequential:add(ABlock, BBlock),
     ?assert(erlBlas:equals(Res, CBlock)).
 
 max_size_blocks_test() ->
@@ -41,42 +41,35 @@ max_size_blocks_test() ->
     ],
 
     C = [
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100],
-        [110, 220, 330, 440, 550, 660, 770, 880, 990, 1100]
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30],
+        [3, 6, 9, 12, 15, 18, 21, 24, 27, 30]
     ],
 
     ABlock = erlBlas:matrix(A),
     BBlock = erlBlas:matrix(B),
     CBlock = erlBlas:matrix(C),
-    Res = erlBlas:mult(ABlock, BBlock),
+    Res = sequential:add(ABlock, BBlock),
     ?assert(erlBlas:equals(Res, CBlock)).
 
 float_test() ->
-    A = [[-1.2, 2.5, 3.6, 4.7, 5.69, 42.69], [6.24, 7.77, 8.42, -9.58, 10.013, 69.42]],
+    A = [[1.2, 2.5, 3.6, 4.7, 5.69, 42.69], [6.24, 7.77, 8.42, 9.58, 10.013, 69.42]],
 
-    B = [
-        [1.2, 2.5],
-        [3.6, 4.7],
-        [-5.69, 42.69],
-        [6.24, -7.77],
-        [8.42, 9.58],
-        [-10.013, 69.42]
-    ],
+    B = [[1.2, 2.5, 3.6, 4.7, 5.69, 42.69], [6.24, 7.77, 8.42, 9.58, 10.013, 69.42]],
 
     ABlock = erlBlas:matrix(A),
     BBlock = erlBlas:matrix(B),
-    Res = erlBlas:mult(ABlock, BBlock),
+    Res = sequential:add(ABlock, BBlock),
     ANum = numerl:matrix(A),
     BNum = numerl:matrix(B),
-    Conf = numerl:dot(ANum, BNum),
+    Conf = numerl:add(ANum, BNum),
     Expected = numerl:mtfl(Conf),
     Actual = erlBlas:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
@@ -98,15 +91,10 @@ random_test() ->
 
 matrix_test_core(Sizes) ->
     lists:map(
-        fun(K) ->
+        fun(M) ->
             lists:map(
-                fun(M) ->
-                    lists:map(
-                        fun(N) ->
-                            random_test_core(K, M, N)
-                        end,
-                        Sizes
-                    )
+                fun(N) ->
+                    random_test_core(M, N)
                 end,
                 Sizes
             )
@@ -114,15 +102,15 @@ matrix_test_core(Sizes) ->
         Sizes
     ).
 
-random_test_core(K, M, N) ->
-    A = utils:generateRandMat(K, M),
+random_test_core(M, N) ->
+    A = utils:generateRandMat(M, N),
     B = utils:generateRandMat(M, N),
     ABlock = erlBlas:matrix(A),
     BBlock = erlBlas:matrix(B),
-    Res = erlBlas:mult(ABlock, BBlock),
+    Res = sequential:add(ABlock, BBlock),
     ANum = numerl:matrix(A),
     BNum = numerl:matrix(B),
-    Conf = numerl:dot(ANum, BNum),
-    Expected = numerl:mtfli(Conf),
+    Conf = numerl:add(ANum, BNum),
+    Expected = numerl:mtfl(Conf),
     Actual = erlBlas:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).

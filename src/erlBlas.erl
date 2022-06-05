@@ -4,26 +4,47 @@
 
 -import(persistent_term, [get/1, put/2]).
 
--on_load benchmark/0.
+-on_load(benchmark/0).
 
--import(utils,
-        [split4/1,
-         recompose4/4,
-         appendEach/2,
-         appendEachList/1,
-         appendList/1,
-         generateRandMat/2,
-         splitLine/4,
-         split4/3,
-         element_wise_op/3,
-         display_mat/1,
-         lineSum/1,
-         element_wise_op_conc/3]).
+-import(
+    utils,
+    [
+        split4/1,
+        recompose4/4,
+        appendEach/2,
+        appendEachList/1,
+        appendList/1,
+        generateRandMat/2,
+        splitLine/4,
+        split4/3,
+        element_wise_op/3,
+        lineSum/1,
+        element_wise_op_conc/3,
+        matrix_operation/2
+    ]
+).
 
--export([add/2, sub/2, mult/2, inv/1, zeros/2, matrix/1, eye/1, toErl/1, equals/2,
-         first_try_benchmark/0, test_time/2, set_max_length/1, copy/1, copy_shape/1]).
+% user interface : single assignment operations and utility functions
+-export([
+    add/2,
+    sub/2,
+    mult/2,
+    inv/1,
+    zeros/2,
+    matrix/1,
+    eye/1,
+    transpose/1,
+    toErl/1,
+    equals/2,
+    get_max_length/0,
+    set_max_length/1,
+    copy/1,
+    copy_shape/1,
+    get_shape/1
+]).
+
+% user interface : Blas in-place operations
 -export([dgemm/7, daxpy/3, dscal/2]).
--export([tr/1, transpose/1, get_max_length/0, get_shape/1]).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% MATRIX GENERATION %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -33,24 +54,25 @@
 zeros(N, M) ->
     MAX_LENGTH = get(max_length),
 
-    if N rem MAX_LENGTH == 0 ->  
-        ModN = MAX_LENGTH,
-        RowMultiple = N div MAX_LENGTH - 1;
-    true ->
-        ModN = N rem MAX_LENGTH,
-        RowMultiple = N div MAX_LENGTH
-    end,
-    
-    if M rem MAX_LENGTH == 0 ->  
-        ModM = MAX_LENGTH,
-        ColMultiple = M div MAX_LENGTH - 1;
-    true ->
-        ModM = M rem MAX_LENGTH,
-        ColMultiple = M div MAX_LENGTH
+    if
+        N rem MAX_LENGTH == 0 ->
+            ModN = MAX_LENGTH,
+            RowMultiple = N div MAX_LENGTH - 1;
+        true ->
+            ModN = N rem MAX_LENGTH,
+            RowMultiple = N div MAX_LENGTH
     end,
 
+    if
+        M rem MAX_LENGTH == 0 ->
+            ModM = MAX_LENGTH,
+            ColMultiple = M div MAX_LENGTH - 1;
+        true ->
+            ModM = M rem MAX_LENGTH,
+            ColMultiple = M div MAX_LENGTH
+    end,
 
-    if  
+    if
         N =< MAX_LENGTH, M =< MAX_LENGTH ->
             [[numerl:zeros(N, M)]];
         N =< MAX_LENGTH, M > MAX_LENGTH ->
@@ -65,23 +87,24 @@ zeros(N, M) ->
             A = zeros(ModN, ModM),
             B = zeros(ModN, ColMultiple * MAX_LENGTH),
             C = zeros(RowMultiple * MAX_LENGTH, ModM),
-            D = zeros(RowMultiple* MAX_LENGTH, ColMultiple * MAX_LENGTH),
-            recompose4(A,B,C,D)
+            D = zeros(RowMultiple * MAX_LENGTH, ColMultiple * MAX_LENGTH),
+            recompose4(A, B, C, D)
     end.
 
 % Returns an Identity matrix of size (N x N)
 eye(N) ->
     MAX_LENGTH = get(max_length),
-    
-    if N rem MAX_LENGTH == 0 ->  
-        ModN = MAX_LENGTH,
-        RowMultiple = N div MAX_LENGTH - 1;
-    true ->
-        ModN = N rem MAX_LENGTH,
-        RowMultiple = N div MAX_LENGTH
+
+    if
+        N rem MAX_LENGTH == 0 ->
+            ModN = MAX_LENGTH,
+            RowMultiple = N div MAX_LENGTH - 1;
+        true ->
+            ModN = N rem MAX_LENGTH,
+            RowMultiple = N div MAX_LENGTH
     end,
 
-    if 
+    if
         N =< MAX_LENGTH ->
             [[numerl:eye(N)]];
         N > MAX_LENGTH ->
@@ -89,7 +112,7 @@ eye(N) ->
             B = zeros(ModN, RowMultiple * MAX_LENGTH),
             C = zeros(RowMultiple * MAX_LENGTH, ModN),
             D = eye(RowMultiple * MAX_LENGTH),
-            recompose4(A,B,C,D)
+            recompose4(A, B, C, D)
     end.
 
 % Take a numeric matrix in Erlang format (list of lists of numbers) and returns a matrix in numerlplus format (list of lists of numerl submatrices)
@@ -101,23 +124,25 @@ matrix(Mat) ->
 matrix(Mat, N, M) ->
     MAX_LENGTH = get(max_length),
 
-    if N rem MAX_LENGTH == 0 ->  
-        ModN = MAX_LENGTH,
-        RowMultiple = N div MAX_LENGTH - 1;
-    true ->
-        ModN = N rem MAX_LENGTH,
-        RowMultiple = N div MAX_LENGTH
-    end,
-    
-    if M rem MAX_LENGTH == 0 ->  
-        ModM = MAX_LENGTH,
-        ColMultiple = M div MAX_LENGTH - 1;
-    true ->
-        ModM = M rem MAX_LENGTH,
-        ColMultiple = M div MAX_LENGTH
+    if
+        N rem MAX_LENGTH == 0 ->
+            ModN = MAX_LENGTH,
+            RowMultiple = N div MAX_LENGTH - 1;
+        true ->
+            ModN = N rem MAX_LENGTH,
+            RowMultiple = N div MAX_LENGTH
     end,
 
-    if  
+    if
+        M rem MAX_LENGTH == 0 ->
+            ModM = MAX_LENGTH,
+            ColMultiple = M div MAX_LENGTH - 1;
+        true ->
+            ModM = M rem MAX_LENGTH,
+            ColMultiple = M div MAX_LENGTH
+    end,
+
+    if
         N =< MAX_LENGTH, M =< MAX_LENGTH ->
             [[numerl:matrix(Mat)]];
         N =< MAX_LENGTH, M > MAX_LENGTH ->
@@ -131,19 +156,19 @@ matrix(Mat, N, M) ->
             C = matrix(L, RowMultiple * MAX_LENGTH, M),
             lists:append(A, C);
         N > MAX_LENGTH, M > MAX_LENGTH ->
-            {UL,UR,LL,LR} = split4(Mat, ModN, ModM),
+            {UL, UR, LL, LR} = split4(Mat, ModN, ModM),
             A = matrix(UL, ModN, ModM),
             B = matrix(UR, ModN, ColMultiple * MAX_LENGTH),
             C = matrix(LL, RowMultiple * MAX_LENGTH, ModM),
             D = matrix(LR, RowMultiple * MAX_LENGTH, ColMultiple * MAX_LENGTH),
-            recompose4(A,B,C,D)
+            recompose4(A, B, C, D)
     end.
 
 copy(M) ->
-    utils:matrix_operation(fun numerl:copy/1, M).
+    matrix_operation(fun numerl:copy/1, M).
 
 copy_shape(M) ->
-    utils:matrix_operation(fun numerl:copy_shape/1, M).
+    matrix_operation(fun numerl:copy_shape/1, M).
 
 get_shape(M) ->
     H = get_height(M, 0),
@@ -157,7 +182,8 @@ get_height(M, N) ->
         [H | T] ->
             {L, _} =
                 numerl:get_shape(
-                    lists:nth(1, H)),
+                    lists:nth(1, H)
+                ),
             get_height(T, N + L);
         _ ->
             error("get_height: invalid matrix")
@@ -221,33 +247,39 @@ scal(Const, M) ->
 % Returns the inverse of the matrix given, in numerlplus format
 inv(M1) ->
     Len = length(M1),
-    if Len > 1 ->
-           {A, B, C, D} = split4(M1),
-           InvA = inv(A),
-           InvAB = mult(InvA, B),
-           CInvA = mult(C, InvA),
-           C4 = inv(sub(D, mult(C, InvAB))), % inv(D-C InvA B)
-           Big = mult(C4, CInvA),
-           C3 = scal(-1, Big),
-           C2 = scal(-1, mult(InvAB, C4)),
-           C1 = add(InvA, mult(InvAB, Big)),
-           recompose4(C1, C2, C3, C4);
-       true ->
-           [[Bin]] = M1,
-           [[numerl:inv(Bin)]]
+    if
+        Len > 1 ->
+            {A, B, C, D} = split4(M1),
+            InvA = inv(A),
+            InvAB = mult(InvA, B),
+            CInvA = mult(C, InvA),
+            % inv(D-C InvA B)
+            C4 = inv(sub(D, mult(C, InvAB))),
+            Big = mult(C4, CInvA),
+            C3 = scal(-1, Big),
+            C2 = scal(-1, mult(InvAB, C4)),
+            C1 = add(InvA, mult(InvAB, Big)),
+            recompose4(C1, C2, C3, C4);
+        true ->
+            [[Bin]] = M1,
+            [[numerl:inv(Bin)]]
     end.
 
 % Returns the transpose of the matrix given, in numerlplus format
 transpose(M) ->
     Tr = tr(M),
-    utils:matrix_operation(fun numerl:transpose/1, Tr).
+    matrix_operation(fun numerl:transpose/1, Tr).
 
 % Takes a matrix in numerlplus format and return the same matrix in erlang format (list of lists of numbers)
 toErl(M) ->
-    appendList(lists:map(fun(Row) ->
-                            appendEachList(lists:map(fun(Elem) -> numerl:mtfl(Elem) end, Row))
-                         end,
-                         M)).
+    appendList(
+        lists:map(
+            fun(Row) ->
+                appendEachList(lists:map(fun(Elem) -> numerl:mtfl(Elem) end, Row))
+            end,
+            M
+        )
+    ).
 
 % Returns true if the elements of the two matrix given (in numerlplus format) are all the same, false otherwise.
 equals(M1, M2) ->
@@ -265,9 +297,6 @@ set_max_length(N) ->
     put(max_length, N).
 
 benchmark() ->
-    put(max_length, 50).
-
-first_try_benchmark() ->
     First_max = lists:min([round_one_benchmark(5) || _ <- lists:seq(1, 5)]),
     Second_max =
         lists:nth(2, lists:sort([round_two_benchmark(First_max) || _ <- lists:seq(1, 20)])),
@@ -275,18 +304,20 @@ first_try_benchmark() ->
 
 round_one_benchmark(N) ->
     Passed = test_time(N, false),
-    if Passed ->
-           round_one_benchmark(N * 2);
-       true ->
-           N div 2
+    if
+        Passed ->
+            round_one_benchmark(N * 2);
+        true ->
+            N div 2
     end.
 
 round_two_benchmark(N) ->
     Passed = test_time(N, false),
-    if Passed ->
-           round_two_benchmark(round(N * 1.2));
-       true ->
-           round(N / 1.2)
+    if
+        Passed ->
+            round_two_benchmark(round(N * 1.2));
+        true ->
+            round(N / 1.2)
     end.
 
 test_time(N, true) ->
@@ -310,10 +341,11 @@ test_time(N, false) ->
     Mat2 = numerl:matrix(M2),
     C = numerl:zeros(N, N),
     {Time, _} = timer:tc(numerl, dgemm, [1, 1, 2.5, Mat, Mat2, 3.5, C]),
-    if Time < 1000 ->
-           true;
-       true ->
-           false
+    if
+        Time < 1000 ->
+            true;
+        true ->
+            false
     end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -321,68 +353,89 @@ test_time(N, false) ->
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 dgemm(ATransp, BTransp, Alpha, M1, M2, Beta, C) ->
-    if ATransp ->
-           A = tr(M1);
-       true ->
-           A = M1
+    if
+        ATransp ->
+            A = tr(M1);
+        true ->
+            A = M1
     end,
-    if BTransp ->
-           B = M2;
-       true ->
-           B = tr(M2)
+    if
+        BTransp ->
+            B = M2;
+        true ->
+            B = tr(M2)
     end,
-    if Beta /= 1.0 ->
-           dscal(Beta, C);
-       true ->
-           skip
+    if
+        Beta /= 1.0 ->
+            dscal(Beta, C);
+        true ->
+            skip
     end,
     PID = self(),
     PIDs =
-        lists:zipwith(fun(RowA, RowC) ->
-                         spawn(fun() ->
-                                  ParentPID = self(),
-                                  PidList =
-                                      lists:zipwith(fun(RowB, ElemC) ->
-                                                       spawn(fun() ->
-                                                                lists:zipwith(fun(ElemA, ElemB) ->
-                                                                                 numerl:dgemm(if ATransp -> 1; true -> 0 end,
-                                                                                              if BTransp -> 1; true -> 0 end,
-                                                                                              Alpha,
-                                                                                              ElemA,
-                                                                                              ElemB,
-                                                                                              1.0,
-                                                                                              ElemC)
-                                                                              end,
-                                                                              RowA,
-                                                                              RowB),
-                                                                ParentPID ! {finished, self()}
-                                                             end)
-                                                    end,
-                                                    B,
-                                                    RowC),
-                                  lists:map(fun(Elem) ->
-                                               receive
-                                                   {finished, Elem} ->
-                                                       ok
-                                               end
-                                            end,
-                                            PidList),
-                                  PID ! {finished, self()}
-                               end)
-                      end,
-                      A,
-                      C),
+        lists:zipwith(
+            fun(RowA, RowC) ->
+                spawn(fun() ->
+                    ParentPID = self(),
+                    PidList =
+                        lists:zipwith(
+                            fun(RowB, ElemC) ->
+                                spawn(fun() ->
+                                    lists:zipwith(
+                                        fun(ElemA, ElemB) ->
+                                            numerl:dgemm(
+                                                if
+                                                    ATransp -> 1;
+                                                    true -> 0
+                                                end,
+                                                if
+                                                    BTransp -> 1;
+                                                    true -> 0
+                                                end,
+                                                Alpha,
+                                                ElemA,
+                                                ElemB,
+                                                1.0,
+                                                ElemC
+                                            )
+                                        end,
+                                        RowA,
+                                        RowB
+                                    ),
+                                    ParentPID ! {finished, self()}
+                                end)
+                            end,
+                            B,
+                            RowC
+                        ),
+                    lists:map(
+                        fun(Elem) ->
+                            receive
+                                {finished, Elem} ->
+                                    ok
+                            end
+                        end,
+                        PidList
+                    ),
+                    PID ! {finished, self()}
+                end)
+            end,
+            A,
+            C
+        ),
 
-    lists:map(fun(Elem) ->
-                 receive
-                     {finished, Elem} ->
-                         ok
-                 end
-              end,
-              PIDs).
+    lists:map(
+        fun(Elem) ->
+            receive
+                {finished, Elem} ->
+                    ok
+            end
+        end,
+        PIDs
+    ).
 
 daxpy(Alpha, X, Y) ->
-    utils:element_wise_op_conc3(fun(A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
+    element_wise_op_conc(fun(A, B) -> numerl:daxpy(Alpha, A, B) end, X, Y).
 
 dscal(Alpha, X) ->
-    utils:matrix_operation(fun(A) -> numerl:dscal(Alpha, A) end, X).
+    matrix_operation(fun(A) -> numerl:dscal(Alpha, A) end, X).

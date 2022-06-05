@@ -1,10 +1,25 @@
 -module(utils).
 
--export([generateRandMat/2, append/1, appendEach/1, appendEach/2, appendEachList/1,
-         appendList/1, splitLine/3, split4/1, recompose4/4, recompose4/1, split4/3, splitLine/4,
-         element_wise_op/3, display_mat/1, lineSum/1]).
--export([element_wise_op_conc/3, sendResult/4, 
-         element_wise_op_conc2/3, element_wise_op_conc3/3,  matrix_operation/2]).
+-export([
+    generateRandMat/2,
+    append/1,
+    appendEach/2,
+    appendEachList/1,
+    appendList/1,
+    splitLine/3,
+    split4/1,
+    recompose4/4, recompose4/1,
+    split4/3,
+    splitLine/4,
+    lineSum/1
+]).
+
+-export([
+    element_wise_op/3,
+    element_wise_op_conc2/3,
+    element_wise_op_conc/3,
+    matrix_operation/2
+]).
 
 generateRandMat(0, _) ->
     [];
@@ -65,24 +80,12 @@ recompose4({Pid, ID}) ->
             end
     end.
 
-appendEach({Pid, ID}) ->
-    receive
-        {a, A} ->
-            receive
-                {b, B} ->
-                    Result = appendEach(A, B),
-                    %erlang:display({sent, Pid, ID, dims(Result)}),
-                    Pid ! {ID, Result}
-            end
-    end.
-
 append({Pid, ID}) ->
     receive
         {a, A} ->
             receive
                 {b, B} ->
                     Result = lists:append(A, B),
-                    %erlang:display({sent, Pid, ID, dims(Result)}),
                     Pid ! {ID, Result}
             end
     end.
@@ -111,93 +114,74 @@ appendList(L) ->
             lists:append(H, appendList(T))
     end.
 
-display_mat(M) ->
-    lists:map(fun(Row) ->
-                 lists:map(fun(Elem) ->
-                              erlang:display(
-                                  numerl:mtfli(Elem))
-                           end,
-                           Row)
-              end,
-              M).
-
 element_wise_op(Op, M1, M2) ->
-    lists:zipwith(fun(L1, L2) -> lists:zipwith(fun(E1, E2) -> Op(E1, E2) end, L1, L2) end,
-                  M1,
-                  M2).
-
-element_wise_op_conc(Op, M1, M2) ->
-    PidMat =
-        lists:zipwith(fun(L1, L2) ->
-                         lists:zipwith(fun(E1, E2) -> spawn(utils, sendResult, [Op, E1, E2, self()])
-                                       end,
-                                       L1,
-                                       L2)
-                      end,
-                      M1,
-                      M2),
-    lists:map(fun(Row) ->
-                 lists:map(fun(Pid) ->
-                              receive
-                                  {Result, Pid} ->
-                                      Result
-                              end
-                           end,
-                           Row)
-              end,
-              PidMat).
+    lists:zipwith(
+        fun(L1, L2) -> lists:zipwith(fun(E1, E2) -> Op(E1, E2) end, L1, L2) end,
+        M1,
+        M2
+    ).
 
 element_wise_op_conc2(Op, M1, M2) ->
     ParentPID = self(),
-    PidList =
-        lists:zipwith(fun(Row1, Row2) ->
-                         spawn(fun() ->
-                                  Result =
-                                      lists:zipwith(fun(Elem1, Elem2) ->
-                                                       ParPID = self(),
-                                                       Pidipid =
-                                                           spawn(fun() ->
-                                                                    Res = Op(Elem1, Elem2),
-                                                                    ParPID ! {Res, self()}
-                                                                 end),
-                                                       receive
-                                                           {Res, Pidipid} ->
-                                                               Res
-                                                       end
-                                                    end,
-                                                    Row1,
-                                                    Row2),
-                                  ParentPID ! {Result, self()}
-                               end)
-                      end,
-                      M1,
-                      M2),
+    PidList = lists:zipwith(
+        fun(Row1, Row2) ->
+            spawn(fun() ->
+                Result =
+                    lists:zipwith(
+                        fun(Elem1, Elem2) ->
+                            ParPID = self(),
+                            Pidipid =
+                                spawn(fun() ->
+                                    Res = Op(Elem1, Elem2),
+                                    ParPID ! {Res, self()}
+                                end),
+                            receive
+                                {Res, Pidipid} ->
+                                    Res
+                            end
+                        end,
+                        Row1,
+                        Row2
+                    ),
+                ParentPID ! {Result, self()}
+            end)
+        end,
+        M1,
+        M2
+    ),
     %erlang:display(PidList),
-    lists:map(fun(Pid) ->
-                 receive
-                     {Result, Pid} ->
-                         Result
-                 end
-              end,
-              PidList).
+    lists:map(
+        fun(Pid) ->
+            receive
+                {Result, Pid} ->
+                    Result
+            end
+        end,
+        PidList
+    ).
 
-element_wise_op_conc3(Op, M1, M2) ->
-                ParentPID = self(),
-                PidMat =
-            lists:zipwith(fun(L1, L2) -> spawn(fun() -> Result = lists:zipwith(fun(E1, E2) -> Op(E1, E2) end,L1,L2), ParentPID ! {Result, self()} end) end,
-                                  M1,
-                                  M2),
-                lists:map(fun(LinePid) ->
-                            receive 
-                                {Result, LinePid} ->
-                                    Result
-                            end 
-                          end,
-                          PidMat).
-
-sendResult(Op, Elem1, Elem2, ParentPID) ->
-    Value = Op(Elem1, Elem2),
-    ParentPID ! {Value, self()}.
+element_wise_op_conc(Op, M1, M2) ->
+    ParentPID = self(),
+    PidMat =
+        lists:zipwith(
+            fun(L1, L2) ->
+                spawn(fun() ->
+                    Result = lists:zipwith(fun(E1, E2) -> Op(E1, E2) end, L1, L2),
+                    ParentPID ! {Result, self()}
+                end)
+            end,
+            M1,
+            M2
+        ),
+    lists:map(
+        fun(LinePid) ->
+            receive
+                {Result, LinePid} ->
+                    Result
+            end
+        end,
+        PidMat
+    ).
 
 matrix_operation(Op, M) ->
     lists:map(fun(Row) -> lists:map(fun(A) -> Op(A) end, Row) end, M).

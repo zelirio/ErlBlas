@@ -1,4 +1,4 @@
--module(dgemm_conc_test_SUITE).
+-module(dgemm_perf_test_SUITE).
 
 -include_lib("stdlib/include/assert.hrl").
 -include_lib("eunit/include/eunit.hrl").
@@ -6,23 +6,23 @@
 -import(mat, ['*'/2, '*´'/2, tr/1, '+'/2, '-'/2, '=='/2, eval/1]).
 
 performance_test_() ->
-    {timeout,
-     100,
-     fun() ->
+    {timeout, 100, fun() ->
         performance(),
         performance_conc()
-     end}.
+    end}.
 
 performance_conc() ->
     timer:sleep(100),
     %dgemm_conc_exec_time(10,100),
-    Sizes = [500],
+    Sizes = [10, 50, 100, 200, 350, 500],
     Results =
-        lists:map(fun(Size) ->
-                     Times = dgemm_conc_exec_time(10, Size),
-                     stats(Times)
-                  end,
-                  Sizes),
+        lists:map(
+            fun(Size) ->
+                Times = dgemm_conc_exec_time(10, Size),
+                stats(Times)
+            end,
+            Sizes
+        ),
     erlang:display({conc, Results}).
 
 dgemm_conc_exec_time(N, Size) ->
@@ -33,22 +33,25 @@ dgemm_conc_exec_time(N, Size) ->
     Mat2 = erlBlas:matrix(M2),
     Mat3 = erlBlas:matrix(M3),
     {Time, _} = timer:tc(erlBlas, dgemm, [false, false, 1.0, Mat1, Mat2, 1.0, Mat3]),
-    if N == 1 ->
-           [Time];
-       true ->
-           [Time | dgemm_conc_exec_time(N - 1, Size)]
+    if
+        N == 1 ->
+            [Time];
+        true ->
+            [Time | dgemm_conc_exec_time(N - 1, Size)]
     end.
 
 performance() ->
     timer:sleep(100),
     %dgemm_exec_time(10,100),
-    Sizes = [500],
+    Sizes = [10, 50, 100, 200, 350, 500],
     Results =
-        lists:map(fun(Size) ->
-                     Times = dgemm_exec_time(10, Size),
-                     stats(Times)
-                  end,
-                  Sizes),
+        lists:map(
+            fun(Size) ->
+                Times = dgemm_exec_time(10, Size),
+                stats(Times)
+            end,
+            Sizes
+        ),
     erlang:display({seq, Results}).
 
 dgemm_exec_time(N, Size) ->
@@ -59,10 +62,11 @@ dgemm_exec_time(N, Size) ->
     Mat2 = erlBlas:matrix(M2),
     Mat3 = erlBlas:matrix(M3),
     {Time, _} = timer:tc(sequential, dgemm, [false, false, 1.0, Mat1, Mat2, 1.0, Mat3]),
-    if N == 1 ->
-           [Time];
-       true ->
-           [Time | dgemm_exec_time(N - 1, Size)]
+    if
+        N == 1 ->
+            [Time];
+        true ->
+            [Time | dgemm_exec_time(N - 1, Size)]
     end.
 
 stats(List) ->

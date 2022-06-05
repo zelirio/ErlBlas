@@ -13,10 +13,10 @@ performance_test_() ->
 
 performance_C() ->
     timer:sleep(100),
-    Sizes = [10, 50, 100, 200],%,1000,2000],
+    Sizes = [10, 50, 100, 200, 350, 500],%,1000,2000],
     Results =
         lists:map(fun(Size) ->
-                     Times = mult_C_exec_time(100, Size),
+                     Times = mult_C_exec_time(20, Size),
                      stats(Times)
                   end,
                   Sizes),
@@ -25,9 +25,9 @@ performance_C() ->
 mult_C_exec_time(N, Size) ->
     M1 = utils:generateRandMat(Size, Size),
     M2 = utils:generateRandMat(Size, Size),
-    Mat1 = erlBlas:matrix(M1),
-    Mat2 = erlBlas:matrix(M2),
-    {Time, _} = timer:tc(erlBlas, mult, [Mat1, Mat2]),
+    Mat1 = numerl:matrix(M1),
+    Mat2 = numerl:matrix(M2),
+    {Time, _} = timer:tc(numerl, dot, [Mat1, Mat2]),
     if N == 1 ->
            [Time];
        true ->
@@ -36,10 +36,10 @@ mult_C_exec_time(N, Size) ->
 
 performance_erl() ->
     timer:sleep(100),
-    Sizes = [10, 50, 100, 200],%,1000,2000],
+    Sizes = [10, 50, 100, 200, 350, 500],%,1000,2000],
     Results =
         lists:map(fun(Size) ->
-                     Times = mult_erl_exec_time(100, Size),
+                     Times = mult_erl_exec_time(20, Size),
                      stats(Times)
                   end,
                   Sizes),

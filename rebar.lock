@@ -1,0 +1,4 @@
+[{<<"numerl">>,
+  {git,"https://github.com/CoupletB/numerl.git",
+       {ref,"88b6ad51109da27996b3fb89a62869eebc4a515f"}},
+  0}].

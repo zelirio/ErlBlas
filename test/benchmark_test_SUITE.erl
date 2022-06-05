@@ -3,15 +3,14 @@
 -include_lib("stdlib/include/assert.hrl").
 -include_lib("eunit/include/eunit.hrl").
 
-benchmark_testi() ->
+benchmark_test() ->
     erlBlas:first_try_benchmark(),
-    erlang:display(
-        erlBlas:get_max_length()).
+    erlang:display(erlBlas:get_max_length()).
 
 max_test() ->
     {timeout, 1000, run(20, 40, [])}.
 
-run(80, 0, Acc) ->
+run(80, 0, _) ->
     ok;
 run(N, 0, Acc) ->
     erlang:display(N),
@@ -24,20 +23,7 @@ run(N, T, Acc) ->
     Mat2 = numerl:matrix(M2),
     C = numerl:zeros(N, N),
     {Time, _} = timer:tc(numerl, dgemm, [1, 1, 1.5, Mat, Mat2, 2.0, C]),
-    %erlang:display(
-    %numerl:mtfl(C)),
-    %erlang:display({time, N, Time}),
     run(N, T - 1, [Time | Acc]).
-
-run2(_, 0) ->
-    ok;
-run2(N, I) ->
-    M = utils:generateRandMat(N, N),
-    Mat = numerl:matrix(M),
-    C = numerl:zeros(N, N),
-    {Time, _} = timer:tc(numerl, daxpy, [1.0, Mat, Mat]),
-    erlang:display({time, N, Time}),
-    run2(N, I - 1).
 
 stats(List) ->
     case List of
@@ -48,7 +34,6 @@ stats(List) ->
     end.
 
 mean(List) ->
-    %erlang:display(List),
     lineSum(List) / length(List).
 
 var(List, Mean) ->
