@@ -4,7 +4,6 @@
 -include_lib("eunit/include/eunit.hrl").
 
 benchmark_test() ->
-    erlBlas:first_try_benchmark(),
     erlang:display(erlBlas:get_max_length()).
 
 max_test() ->

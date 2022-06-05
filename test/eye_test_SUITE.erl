@@ -42,7 +42,7 @@ max_size_blocks_test() ->
     erlBlas:set_max_length(5),
     Block = erlBlas:eye(10),
     BlockResult =
-        [[numerl:eye(5, 5), numerl:zeros(5, 5)], [numerl:zeros(5, 5), numerl:eye(5, 5)]],
+        [[numerl:eye(5), numerl:zeros(5, 5)], [numerl:zeros(5, 5), numerl:eye(5)]],
     check_matrix(Block, BlockResult),
     erlBlas:set_max_length(Max).
 
