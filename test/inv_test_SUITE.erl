@@ -14,16 +14,18 @@ base_test() ->
     ?assert(mat:'=='(ErlInv, ErlRes)).
 
 max_size_blocks_test() ->
-    M = [[1, 27, 31, 45, 54, 6, 7, 8, 9, 10],
-         [10, 25, 38, 4, 5, 6, 7, 8, 9, 11],
-         [1, 20, 34, 4, 58, 6, 72, 78, 98, 12],
-         [11, 22, 32, 4, 5, 60, 7, 8, 9, 13],
-         [1, 2, 37, 4, 51, 61, 71, 8, 97, 14],
-         [10, 22, 30, 4, 5, 68, 7, 8, 89, 15],
-         [11, 2, 34, 4, 5, 67, 7, 80, 9, 16],
-         [1, 25, 53, 47, 5, 6, 79, 8, 97, 17],
-         [18, 27, 3, 48, 5, 6, 74, 84, 9, 18],
-         [1, 20, 36, 4, 5, 65, 71, 87, 9, 19]],
+    M = [
+        [1, 27, 31, 45, 54, 6, 7, 8, 9, 10],
+        [10, 25, 38, 4, 5, 6, 7, 8, 9, 11],
+        [1, 20, 34, 4, 58, 6, 72, 78, 98, 12],
+        [11, 22, 32, 4, 5, 60, 7, 8, 9, 13],
+        [1, 2, 37, 4, 51, 61, 71, 8, 97, 14],
+        [10, 22, 30, 4, 5, 68, 7, 8, 89, 15],
+        [11, 2, 34, 4, 5, 67, 7, 80, 9, 16],
+        [1, 25, 53, 47, 5, 6, 79, 8, 97, 17],
+        [18, 27, 3, 48, 5, 6, 74, 84, 9, 18],
+        [1, 20, 36, 4, 5, 65, 71, 87, 9, 19]
+    ],
     Num = numerl:matrix(M),
     NumResult = numerl:inv(Num),
     ErlNum = numerl:mtfl(NumResult),
@@ -32,13 +34,28 @@ max_size_blocks_test() ->
     ErlBlock = erlBlas:toErl(BlockResult),
     ?assert(mat:'=='(ErlBlock, ErlNum)).
 
+corner_cases_test_() ->
+    erlBlas:set_max_length(17),
+    Sizes = [16, 17, 18, 33, 34, 35],
+    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+
 random_test() ->
-    N = 13,
+    erlBlas:set_max_length(17),
+    Sizes = [rand:uniform(800) + 500, rand:uniform(800) + 500, rand:uniform(800) + 500],
+    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+
+matrix_test_core(Sizes) ->
+    lists:map(
+        fun(N) ->
+            random_test_core(N)
+        end,
+        Sizes
+    ).
+
+random_test_core(N) ->
     M = utils:generateRandMat(N, N),
-    Num = numerl:matrix(M),
-    NumResult = numerl:inv(Num),
-    ErlNum = numerl:mtfl(NumResult),
     Block = erlBlas:matrix(M),
     BlockResult = erlBlas:inv(Block),
     ErlBlock = erlBlas:toErl(BlockResult),
-    ?assert(mat:'=='(ErlBlock, ErlNum)).
+    Res = mat:inv(M),
+    ?assert(mat:'=='(ErlBlock, Res)).
