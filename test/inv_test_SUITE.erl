@@ -36,6 +36,7 @@ max_size_blocks_test() ->
 
 % M is invertible but not its upper left block
 univertible_upper_left_test() ->
+    Max = erlBlas:get_max_length(),
     erlBlas:set_max_length(2),
     M = [
         [1, 2, 3, 4],
@@ -47,17 +48,35 @@ univertible_upper_left_test() ->
     Block = erlBlas:matrix(M),
     Inv = erlBlas:inv(Block),
     ErlInv = erlBlas:toErl(Inv),
-    ?assert(mat:'=='(ErlInv, MatInv)).
+    ?assert(mat:'=='(ErlInv, MatInv)),
+    erlBlas:set_max_length(Max).
+
+small_random_test() ->
+    Max = erlBlas:get_max_length(),
+    erlBlas:set_max_length(50),
+    Sizes = [rand:uniform(10), rand:uniform(10), rand:uniform(10)],
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
 
 corner_cases_test_() ->
+    Max = erlBlas:get_max_length(),
     erlBlas:set_max_length(17),
     Sizes = [16, 17, 18, 33, 34, 35],
-    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
 
 random_test() ->
+    Max = erlBlas:get_max_length(),
     erlBlas:set_max_length(17),
     Sizes = [rand:uniform(800) + 500, rand:uniform(800) + 500, rand:uniform(800) + 500],
-    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
 
 matrix_test_core(Sizes) ->
     lists:map(

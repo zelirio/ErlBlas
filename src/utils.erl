@@ -29,7 +29,7 @@ generateRandMat(Dim1, Dim2) ->
 generateRandVect(0) ->
     [];
 generateRandVect(Dim2) ->
-    [rand:uniform(5) | generateRandVect(Dim2 - 1)].
+    [rand:uniform(1000) | generateRandVect(Dim2 - 1)].
 
 splitLine(M1, Acc1, Acc2) ->
     case M1 of

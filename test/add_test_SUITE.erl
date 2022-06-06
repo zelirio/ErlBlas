@@ -75,15 +75,32 @@ float_test() ->
     Actual = erlBlas:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
 
+small_random_test() ->
+    Max = erlBlas:get_max_length(),
+    erlBlas:set_max_length(50),
+    Sizes = [rand:uniform(10), rand:uniform(10), rand:uniform(10)],
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
+
 corner_cases_test_() ->
+    Max = erlBlas:get_max_length(),
     erlBlas:set_max_length(50),
     Sizes = [49, 50, 51, 99, 100, 101],
-    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
 
 random_test() ->
+    Max = erlBlas:get_max_length(),
     erlBlas:set_max_length(50),
     Sizes = [rand:uniform(800) + 500, rand:uniform(800) + 500, rand:uniform(800) + 500],
-    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
 
 matrix_test_core(Sizes) ->
     lists:map(
@@ -112,6 +129,7 @@ random_test_core(M, N) ->
     ?assert(mat:'=='(Expected, Actual)).
 
 performance_test_() ->
+    Max = erlBlas:get_max_length(),
     {timeout, 1000, fun() ->
         MaxLengths = [5, 10, 50, 100, 200, 500],
         lists:map(
@@ -119,7 +137,8 @@ performance_test_() ->
                 erlBlas:set_max_length(MaxLength),
                 erlang:display({max_length, erlBlas:get_max_length()}),
                 performance(),
-                performance_conc()
+                performance_conc(),
+                erlBlas:set_max_length(Max)
             end,
             MaxLengths
         )

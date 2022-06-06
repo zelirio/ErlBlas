@@ -76,15 +76,15 @@ zeros(N, M) ->
         N =< MAX_LENGTH, M =< MAX_LENGTH ->
             [[numerl:zeros(N, M)]];
         N =< MAX_LENGTH, M > MAX_LENGTH ->
-            A = zeros(N, ModM),
+            A = [[numerl:zeros(N, ModM)]],
             B = zeros(N, ColMultiple * MAX_LENGTH),
             appendEach(A, B);
         N > MAX_LENGTH, M =< MAX_LENGTH ->
-            A = zeros(ModN, M),
+            A = [[numerl:zeros(ModN, M)]],
             C = zeros(RowMultiple * MAX_LENGTH, M),
             lists:append(A, C);
         N > MAX_LENGTH, M > MAX_LENGTH ->
-            A = zeros(ModN, ModM),
+            A = [[numerl:zeros(ModN, ModM)]],
             B = zeros(ModN, ColMultiple * MAX_LENGTH),
             C = zeros(RowMultiple * MAX_LENGTH, ModM),
             D = zeros(RowMultiple * MAX_LENGTH, ColMultiple * MAX_LENGTH),
@@ -108,7 +108,7 @@ eye(N) ->
         N =< MAX_LENGTH ->
             [[numerl:eye(N)]];
         N > MAX_LENGTH ->
-            A = eye(ModN),
+            A = [[numerl:eye(ModN)]],
             B = zeros(ModN, RowMultiple * MAX_LENGTH),
             C = zeros(RowMultiple * MAX_LENGTH, ModN),
             D = eye(RowMultiple * MAX_LENGTH),
@@ -147,17 +147,17 @@ matrix(Mat, N, M) ->
             [[numerl:matrix(Mat)]];
         N =< MAX_LENGTH, M > MAX_LENGTH ->
             {L, R} = splitLine(Mat, [], [], ModM),
-            A = matrix(L, N, ModM),
+            A = [[numerl:matrix(L)]],
             B = matrix(R, N, ColMultiple * MAX_LENGTH),
             appendEach(A, B);
         N > MAX_LENGTH, M =< MAX_LENGTH ->
             {U, L} = lists:split(ModN, Mat),
-            A = matrix(U, ModN, M),
+            A = [[numerl:matrix(U)]],
             C = matrix(L, RowMultiple * MAX_LENGTH, M),
             lists:append(A, C);
         N > MAX_LENGTH, M > MAX_LENGTH ->
             {UL, UR, LL, LR} = split4(Mat, ModN, ModM),
-            A = matrix(UL, ModN, ModM),
+            A = [[numerl:matrix(UL)]],
             B = matrix(UR, ModN, ColMultiple * MAX_LENGTH),
             C = matrix(LL, RowMultiple * MAX_LENGTH, ModM),
             D = matrix(LR, RowMultiple * MAX_LENGTH, ColMultiple * MAX_LENGTH),

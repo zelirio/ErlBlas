@@ -57,15 +57,32 @@ random_rectangle_test() ->
     Actual = erlBlas:toErl(Res),
     ?assert(mat:'=='(Expected, Actual)).
 
+small_random_test() ->
+    Max = erlBlas:get_max_length(),
+    erlBlas:set_max_length(50),
+    Sizes = [rand:uniform(10), rand:uniform(10), rand:uniform(10)],
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
+
 corner_cases_test_() ->
+    Max = erlBlas:get_max_length(),
     erlBlas:set_max_length(50),
     Sizes = [49, 50, 51, 99, 100, 101],
-    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
 
 random_test() ->
+    Max = erlBlas:get_max_length(),
     erlBlas:set_max_length(50),
     Sizes = [rand:uniform(800) + 500, rand:uniform(800) + 500, rand:uniform(800) + 500],
-    {timeout, 100, fun() -> matrix_test_core(Sizes) end}.
+    {timeout, 100, fun() ->
+        matrix_test_core(Sizes),
+        erlBlas:set_max_length(Max)
+    end}.
 
 matrix_test_core(Sizes) ->
     lists:map(

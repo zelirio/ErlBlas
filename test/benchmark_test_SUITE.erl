@@ -7,7 +7,7 @@ benchmark_test() ->
     erlang:display(erlBlas:get_max_length()).
 
 max_test() ->
-    {timeout, 1000, run(20, 40, [])}.
+    {timeout, 1000, run(40, 20, [])}.
 
 run(80, 0, _) ->
     ok;
