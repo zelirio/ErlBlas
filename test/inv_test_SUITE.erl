@@ -34,6 +34,21 @@ max_size_blocks_test() ->
     ErlBlock = erlBlas:toErl(BlockResult),
     ?assert(mat:'=='(ErlBlock, ErlNum)).
 
+% M is invertible but not its upper left block
+univertible_upper_left_test() ->
+    erlBlas:set_max_length(2),
+    M = [
+        [1, 2, 3, 4],
+        [1, 2, 7, 13],
+        [9, 10, 11, 12],
+        [13, 14, 15, 16]
+    ],
+    MatInv = mat:inv(M),
+    Block = erlBlas:matrix(M),
+    Inv = erlBlas:inv(Block),
+    ErlInv = erlBlas:toErl(Inv),
+    ?assert(mat:'=='(ErlInv, MatInv)).
+
 corner_cases_test_() ->
     erlBlas:set_max_length(17),
     Sizes = [16, 17, 18, 33, 34, 35],
