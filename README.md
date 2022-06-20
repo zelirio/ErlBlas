@@ -7,7 +7,7 @@ A library allowing to perform fast numerical computations in Erlang using the po
 
 ## rebar3
 
-This library is used as a rebar3 dependency see [the installation](https://rebar3.readme.io/docs/getting-started) and [how to use deependencies](https://rebar3.readme.io/docs/dependencies).
+This library is used as a rebar3 dependency see [the installation](https://rebar3.readme.io/docs/getting-started) and [how to use dependencies](https://rebar3.readme.io/docs/dependencies).
 
 In the rebar.config file add the following line
 
